@@ -24,6 +24,11 @@ import org.matsim.api.core.v01.events.ActivityEndEvent;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.PersonDepartureEvent;
 
+import akka.actor.ActorRef;
+import beam.playground.physicalSimProtoType.AkkaJDEQSim.JDEQSimConfigGroup;
+import beam.playground.physicalSimProtoType.AkkaJDEQSim.Vehicle;
+import beam.playground.physicalSimProtoType.AkkaJDEQSim.scheduler.Scheduler;
+
 /**
  * The micro-simulation internal handler for starting a leg.
  * 
@@ -31,7 +36,7 @@ import org.matsim.api.core.v01.events.PersonDepartureEvent;
  */
 public class StartingLegMessage extends EventMessage {
 
-	public StartingLegMessage(Scheduler scheduler, Vehicle vehicle) {
+	public StartingLegMessage(ActorRef scheduler, ActorRef vehicle) {
 		super(scheduler, vehicle);
 		priority = JDEQSimConfigGroup.PRIORITY_DEPARTUARE_MESSAGE;
 	}
