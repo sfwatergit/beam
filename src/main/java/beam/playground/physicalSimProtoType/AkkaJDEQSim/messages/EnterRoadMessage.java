@@ -24,6 +24,10 @@ import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
 import org.matsim.api.core.v01.events.VehicleEntersTrafficEvent;
 
+import akka.actor.ActorRef;
+import beam.playground.physicalSimProtoType.AkkaJDEQSim.JDEQSimConfigGroup;
+import beam.playground.physicalSimProtoType.AkkaJDEQSim.Road;
+
 /**
  * The micro-simulation internal handler for entering a road.
  *
@@ -38,7 +42,7 @@ public class EnterRoadMessage extends EventMessage {
 		road.enterRoad(vehicle, getMessageArrivalTime());
 	}
 
-	public EnterRoadMessage(Scheduler scheduler, Vehicle vehicle) {
+	public EnterRoadMessage(ActorRef scheduler, ActorRef vehicle) {
 		super(scheduler, vehicle);
 		priority = JDEQSimConfigGroup.PRIORITY_ENTER_ROAD_MESSAGE;
 	}

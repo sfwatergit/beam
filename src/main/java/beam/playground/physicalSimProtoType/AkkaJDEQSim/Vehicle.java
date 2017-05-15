@@ -205,7 +205,7 @@ public class Vehicle extends SimUnit {
 		linkIndex = getCurrentLinkRoute().length;
 	}
 
-	public void scheduleEnterRoadMessage(double scheduleTime, Road road) {
+	public void scheduleEnterRoadMessage(double scheduleTime, ActorRef road) {
 		/*
 		 * before entering the new road, we must leave the previous road (if
 		 * there is a previous road) the first link does not need to be left
@@ -222,11 +222,15 @@ public class Vehicle extends SimUnit {
 			 * the enterRequest would not be correct any more (which involves
 			 * the noOfCarsPromisedToEnterRoad variable)
 			 */
-			road.giveBackPromisedSpaceToRoad(); // next road
+			giveBackPromisedSpaceToRoad(road); // next road
 			scheduleEndLegMessage(scheduleTime, road);
 		} else {
 			_scheduleEnterRoadMessage(scheduleTime, road);
 		}
+	}
+	
+	private void giveBackPromisedSpaceToRoad(ActorRef road){
+		road.tell("giveBackPromisedSpaceToRoad", null);
 	}
 
 	public void scheduleLeavePreviousRoadMessage(double scheduleTime) {
