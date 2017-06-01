@@ -1,6 +1,6 @@
 package beam.playground.jdeqsimPerformance;
 
-import org.matsim.api.core.v01.events.LinkEnterEvent;
+import org.matsim.api.core.v01.events.Event;
 import org.matsim.contrib.util.CompactCSVWriter;
 import org.matsim.core.utils.io.IOUtils;
 
@@ -28,11 +28,11 @@ public class EventCSVWriter {
 		this.csvWriter = new CompactCSVWriter(writer, separator);
 	}
 
-	public void logEvent(LinkEnterEvent event){
+	public void logEvent(Event event){
 
     	if(!isHeaderWritten) {
 
-			System.out.println("Writting header");
+			System.out.println("Writing header");
 			List<String> tokens = new ArrayList<>();
 
 			for (String attr : event.getAttributes().keySet()) {
