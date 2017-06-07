@@ -145,20 +145,20 @@ public class EventCSVWriter {
 		List<String> tokens = new ArrayList<>();
 
 		// Header line 1
-		tokens.add("");
-		for (int i = 0; i < numberOfBins; i++) {
-
-			tokens.add("Bin" + (i + 1));
-		}
-		String[] tokensA = new String[tokens.size()];
-		tokens.toArray(tokensA);
-
-		csvWriter.writeNext(tokensA);
-		csvWriter.flush();
+//		tokens.add("");
+//		for (int i = 0; i < numberOfBins; i++) {
+//
+//			tokens.add("Bin" + (i + 1));
+//		}
+//		String[] tokensA = new String[tokens.size()];
+//		tokens.toArray(tokensA);
+//
+//		csvWriter.writeNext(tokensA);
+//		csvWriter.flush();
 
 		// Header line 2
 		tokens = new ArrayList<>();
-		tokens.add("");
+		tokens.add("Link");
 
 		int binStart = 0;
 
@@ -166,12 +166,12 @@ public class EventCSVWriter {
 
 
 			int binEnd = binStart + binSize;
-			String header = binStart + " to " + binEnd;
+			String header = "[" + binStart + "-" + binEnd + ")";
 			tokens.add(header);
 
 			binStart = binEnd;
 		}
-		tokensA = new String[tokens.size()];
+		String[] tokensA = new String[tokens.size()];
 		tokens.toArray(tokensA);
 
 		csvWriter.writeNext(tokensA);
