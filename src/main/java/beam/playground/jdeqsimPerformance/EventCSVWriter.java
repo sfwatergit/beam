@@ -24,7 +24,7 @@ public class EventCSVWriter {
     EventCSVWriter(){
 		long time = Calendar.getInstance().getTimeInMillis();
 		File f = new File("C:\\ns\\output\\testfile_" + time + ".csv");
-		char separator = ',';
+		char separator = ';';
 		BufferedWriter writer = IOUtils.getBufferedWriter(f.getPath());
 
 		this.csvWriter = new CompactCSVWriter(writer, separator);
@@ -130,7 +130,7 @@ public class EventCSVWriter {
 
 		long time = Calendar.getInstance().getTimeInMillis();
 		File f = new File("C:\\ns\\output\\testfile_bin_" + time + ".csv");
-		char separator = ',';
+		char separator = ';';
 		BufferedWriter writer = IOUtils.getBufferedWriter(f.getPath());
 		CompactCSVWriter csvWriter = new CompactCSVWriter(writer, separator);
 
@@ -166,7 +166,7 @@ public class EventCSVWriter {
 
 
 			int binEnd = binStart + binSize;
-			String header = "[" + binStart + "-" + binEnd + ")";
+			String header = "[" + binStart + "," + binEnd + ")";
 			tokens.add(header);
 
 			binStart = binEnd;
