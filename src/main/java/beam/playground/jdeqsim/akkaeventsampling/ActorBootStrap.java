@@ -3,7 +3,9 @@ package beam.playground.jdeqsim.akkaeventsampling;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
-import beam.playground.jdeqsim.akkaeventsampling.messages.SchedulerActorJobMessage;
+import beam.playground.jdeqsim.akkaeventsampling.messages.SchedulerActorStartJobMessage;
+import beam.playground.jdeqsim.akkaeventsampling.messages.SchedulerActorStopJobMessage;
+import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.Config;
@@ -14,37 +16,64 @@ import org.matsim.core.scenario.ScenarioUtils;
 
 
 public class ActorBootStrap {
-    public static ActorSystem system;
+    private static final Logger log = Logger.getLogger(ActorBootStrap.class);
 
     public static void main(String[] args) {
-        String defaultFileName = "C:/Users/salma_000/Desktop/MatSim/matsim-master/examples/scenarios/equil/config.xml";
-        Config config = ConfigUtils.loadConfig(defaultFileName);
+        if (args.length != 1) {
+            log.error("Expected config file path as input arguments but found " + args.length);
+        } else {
+            Scenario scenario = ScenarioUtils.loadScenario(loadConfig(args[0]));
 
-        Scenario scenario = ScenarioUtils.loadScenario(config);
+            ActorSystem system = startActorSystem();
+            ActorRef router = startEventRouter(system);
 
-        system = ActorSystem.create("EventSamplingActorSystem");
-        ActorRef router = system.actorOf(Props.create(EventRouter.class), EventRouter.ACTOR_NAME);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            ActorRef scheduleActorUtilRef = startAndGetSchedulerUtilActorRef(system, router);
+
+            SchedulerActorStartJobMessage jobMessage = new SchedulerActorStartJobMessage(500, "specialEvent");
+            startSchedulerJob(scheduleActorUtilRef, jobMessage);
+
+
+            CustomEventManager customEventManager = new CustomEventManager(router);
+            EventsManager eventsManager = customEventManager;
+            eventsManager.initProcessing();
+
+            JDEQSimConfigGroup jdeqSimConfigGroup = new JDEQSimConfigGroup();
+            JDEQSimulation jdeqSimulation = new JDEQSimulation(jdeqSimConfigGroup, scenario, eventsManager);
+            jdeqSimulation.run();
+            eventsManager.finishProcessing();
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            SchedulerActorStopJobMessage jobStopMessage = new SchedulerActorStopJobMessage(jobMessage.getId());
+            stopSchedulerJob(scheduleActorUtilRef, jobStopMessage);
         }
-        ActorRef scheduleActorUtilRef = system.actorOf(Props.create(SchedulerActorUtil.class), SchedulerActorUtil.ACTOR_NAME);
-        scheduleActorUtilRef.tell(new SchedulerActorJobMessage(500), ActorRef.noSender());
+    }
 
-        CustomEventManager customEventManager = new CustomEventManager(router);
-        EventsManager eventsManager = customEventManager;
+    private static Config loadConfig(String configFilePath) {
+        //String defaultFileName = "C:/Users/salma_000/Desktop/MatSim/matsim-master/examples/scenarios/equil/config.xml";
+        return ConfigUtils.loadConfig(configFilePath);
+    }
 
+    private static ActorRef startEventRouter(ActorSystem system) {
+        return system.actorOf(Props.create(EventLoadBalancingRouter.class), EventLoadBalancingRouter.ACTOR_NAME);
+    }
 
-        eventsManager.initProcessing();
+    private static ActorSystem startActorSystem() {
+        return ActorSystem.create("EventSamplingActorSystem");
+    }
 
-        JDEQSimConfigGroup jdeqSimConfigGroup = new JDEQSimConfigGroup();
-        JDEQSimulation jdeqSimulation = new JDEQSimulation(jdeqSimConfigGroup, scenario, eventsManager);
+    private static void startSchedulerJob(ActorRef schedulerActorUtilRef, SchedulerActorStartJobMessage jobMessage) {
+        schedulerActorUtilRef.tell(jobMessage, ActorRef.noSender());
+    }
 
-        jdeqSimulation.run();
+    private static ActorRef startAndGetSchedulerUtilActorRef(ActorSystem system, ActorRef router) {
+        return system.actorOf(Props.create(SchedulerActorUtil.class, router), SchedulerActorUtil.ACTOR_NAME);
+    }
 
-        eventsManager.finishProcessing();
-
-
+    private static void stopSchedulerJob(ActorRef schedulerActorUtilRef, SchedulerActorStopJobMessage jobStopMessage) {
+        schedulerActorUtilRef.tell(jobStopMessage, ActorRef.noSender());
     }
 }
