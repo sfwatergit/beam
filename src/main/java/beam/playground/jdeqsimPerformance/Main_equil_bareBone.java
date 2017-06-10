@@ -32,5 +32,10 @@ public class Main_equil_bareBone {
 		jdeqSimulation.run();
 		
 		eventsManager.finishProcessing();
+
+		//System.out.println("Bins -> " + logEnterLinkEvents.writer2.getBins());
+		//logEnterLinkEvents.writer2.printBins();
+		logEnterLinkEvents.writer2.printLinkData();
+		logEnterLinkEvents.writer2.printLinkDataToCSV();
 	}
 }
