@@ -1,4 +1,4 @@
-package beam.agentsim.routing
+package beam.router
 
 import beam.agentsim.core.Modes.BeamMode
 import beam.agentsim.core.Modes.BeamMode.{CAR, TRANSIT, WALK}
@@ -51,3 +51,4 @@ object RoutingModel {
 
   case class EdgeModeTime(fromVertexLabel: String, mode: BeamMode, time: Long, fromCoord: Coord, toCoord: Coord)
 }
+

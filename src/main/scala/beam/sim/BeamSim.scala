@@ -1,4 +1,4 @@
-package beam.agentsim.sim
+package beam.sim
 
 import java.util.concurrent.TimeUnit
 
@@ -9,11 +9,11 @@ import beam.agentsim.agents.BeamAgentScheduler.{ScheduleTrigger, StartSchedule}
 import beam.agentsim.agents.PersonAgent.PersonData
 import beam.agentsim.agents.TaxiAgent.TaxiData
 import beam.agentsim.agents._
-import beam.agentsim.config.BeamConfig
 import beam.agentsim.events.{EventsSubscriber, JsonFriendlyEventWriterXML, PathTraversalEvent, PointProcessEvent}
-import beam.agentsim.routing.RoutingMessages.InitializeRouter
-import beam.agentsim.routing.opentripplanner.OpenTripPlannerRouter
+import beam.router.RoutingMessages.InitializeRouter
 import beam.agentsim.utils.JsonUtils
+import beam.physsim.{DummyPhysSim, InitializePhysSim}
+import beam.router.DummyRouter
 import com.google.inject.Inject
 import glokka.Registry
 import glokka.Registry.Created
@@ -32,30 +32,25 @@ import scala.util.Random
 
 /**
   * AgentSim entrypoint.
-  * Should instantiate the [[ActorSystem]], [[AgentsimServices]] and interact concurrently w/ the QSim.
+  * Should instantiate the [[ActorSystem]], [[BeamServices]] and interact concurrently w/ the QSim.
   *
   * Created by sfeygin on 2/8/17.
   */
-class Agentsim @Inject()(private val actorSystem: ActorSystem,
-                         private val services: AgentsimServices,
-                         beamConfig : BeamConfig
+class BeamSim @Inject()(private val actorSystem: ActorSystem,
+                        private val services: BeamServices
                         ) extends StartupListener with IterationStartsListener with IterationEndsListener with ShutdownListener {
 
-  import AgentsimServices._
-
-  private val logger: Logger = LoggerFactory.getLogger(classOf[Agentsim])
-  private val popMap: Map[Id[Person], Person] =
-    ListMap(scala.collection.JavaConverters.mapAsScalaMap(services.matsimServices.getScenario.getPopulation.getPersons)
-      .toSeq.sortBy(_._1): _*)
+  private val logger: Logger = LoggerFactory.getLogger(classOf[BeamSim])
   val eventsManager: EventsManager = EventsUtils.createEventsManager()
   implicit val eventSubscriber: ActorRef = actorSystem.actorOf(Props(classOf[EventsSubscriber], eventsManager), "MATSimEventsManagerService")
   var writer: JsonFriendlyEventWriterXML = _
   var currentIter = 0
 
-
   private implicit val timeout = Timeout(5000, TimeUnit.SECONDS)
 
   override def notifyStartup(event: StartupEvent): Unit = {
+    services.popMap = Some(ListMap(scala.collection.JavaConverters
+      .mapAsScalaMap(services.matsimServices.getScenario.getPopulation.getPersons).toSeq.sortBy(_._1): _*))
 
     subscribe(ActivityEndEvent.EVENT_TYPE)
     subscribe(ActivityStartEvent.EVENT_TYPE)
@@ -70,15 +65,21 @@ class Agentsim @Inject()(private val actorSystem: ActorSystem,
     subscribe(PersonArrivalEvent.EVENT_TYPE)
     subscribe(PointProcessEvent.EVENT_TYPE)
 
-    val schedulerFuture = registry ? Registry.Register("scheduler", Props(classOf[BeamAgentScheduler]))
-    schedulerRef = Await.result(schedulerFuture, timeout.duration).asInstanceOf[Created].ref
+    val schedulerFuture = services.registry ? Registry.Register("scheduler", Props(classOf[BeamAgentScheduler]))
+    services.schedulerRef = Await.result(schedulerFuture, timeout.duration).asInstanceOf[Created].ref
 
-    val routerFuture = registry ? Registry.Register("router", Props(classOf[OpenTripPlannerRouter], services, beamConfig))
-    beamRouter = Await.result(routerFuture, timeout.duration).asInstanceOf[Created].ref
-    val routerInitFuture = beamRouter ? InitializeRouter
+    val routerFuture = services.registry ? Registry.Register("router", DummyRouter.props(services))
+    services.beamRouter = Await.result(routerFuture, timeout.duration).asInstanceOf[Created].ref
+    val routerInitFuture = services.beamRouter ? InitializeRouter
     Await.result(routerInitFuture, timeout.duration)
-    val taxiManagerFuture = registry ? Registry.Register("taxiManager", Props(classOf[TaxiManager]))
-    taxiManager = Await.result(taxiManagerFuture, timeout.duration).asInstanceOf[Created].ref
+
+    val physSimFuture = services.registry ? Registry.Register("physSim", DummyPhysSim.props(services))
+    services.physSim = Await.result(physSimFuture, timeout.duration).asInstanceOf[Created].ref
+    val physSimInitFuture = services.physSim ? new InitializePhysSim()
+    Await.result(physSimInitFuture, timeout.duration)
+
+    val taxiManagerFuture = services.registry ? Registry.Register("taxiManager", TaxiManager.props(services))
+    services.taxiManager = Await.result(taxiManagerFuture, timeout.duration).asInstanceOf[Created].ref
 
   }
 
@@ -89,7 +90,7 @@ class Agentsim @Inject()(private val actorSystem: ActorSystem,
     eventsManager.addHandler(writer)
     resetPop(event.getIteration)
     eventsManager.initProcessing()
-    Await.result(schedulerRef ? StartSchedule(3600*9.0, 300.0), timeout.duration)
+    Await.result(services.schedulerRef ? StartSchedule(3600*9.0, 300.0), timeout.duration)
   }
 
   override def notifyIterationEnds(event: IterationEndsEvent): Unit = {
@@ -111,31 +112,32 @@ class Agentsim @Inject()(private val actorSystem: ActorSystem,
       cleanupWriter()
     }
     actorSystem.stop(eventSubscriber)
-    actorSystem.stop(schedulerRef)
+    actorSystem.stop(services.schedulerRef)
     actorSystem.terminate()
   }
 
   def resetPop(iter: Int): Unit = {
-    for ((k, v) <- popMap.take(beamConfig.beam.agentsim.numAgents)) {
-      val props = Props(classOf[PersonAgent], k, PersonData(v.getSelectedPlan))
+    for ((k, v) <- services.popMap.take(services.beamConfig.beam.agentsim.numAgents).flatten) {
+      val props = Props(classOf[PersonAgent], k, PersonData(v.getSelectedPlan),services)
       val ref: ActorRef = actorSystem.actorOf(props, s"${k.toString}_$iter")
-      schedulerRef ! ScheduleTrigger(InitializeTrigger(0.0), ref)
+      services.schedulerRef ! ScheduleTrigger(InitializeTrigger(0.0), ref)
     }
     // Generate taxis and intialize them to be located within ~initialLocationJitter km of a subset of agents
+    //TODO put these in config
     val taxiFraction = 0.1
     val initialLocationJitter = 2000 // meters
-    for((k,v) <- popMap.take(math.round(taxiFraction * popMap.size).toInt)){
+    for((k,v) <- services.popMap.get.take(math.round(taxiFraction * services.popMap.size).toInt)){
       val personInitialLocation: Coord = v.getSelectedPlan.getPlanElements.iterator().next().asInstanceOf[Activity].getCoord
       val taxiInitialLocation: Coord = new Coord(personInitialLocation.getX + initialLocationJitter * 2.0 * (Random.nextDouble() - 0.5),personInitialLocation.getY + initialLocationJitter * 2.0 * (Random.nextDouble() - 0.5))
       val props = Props(classOf[TaxiAgent], Id.create(k.toString,TaxiAgent.getClass), TaxiData(taxiInitialLocation))
       val ref: ActorRef = actorSystem.actorOf(props, s"taxi_${k.toString}_$iter")
-      schedulerRef ! ScheduleTrigger(InitializeTrigger(0.0), ref)
+      services.schedulerRef ! ScheduleTrigger(InitializeTrigger(0.0), ref)
     }
   }
 
 
   def subscribe(eventType: String): Unit = {
-    agentSimEventsBus.subscribe(eventSubscriber, eventType)
+    services.agentSimEventsBus.subscribe(eventSubscriber, eventType)
   }
 
 
