@@ -4,13 +4,13 @@ import java.io.Serializable;
 
 
 public class WorkerMessageRequest implements IRequest, Serializable {
-    private RouterMessageRequest routerMessage;
+    private LoadBalancerMessageRequest routerMessage;
 
-    public WorkerMessageRequest(RouterMessageRequest routerMessage) {
+    public WorkerMessageRequest(LoadBalancerMessageRequest routerMessage) {
         this.routerMessage = routerMessage;
     }
 
-    public RouterMessageRequest getRouterMessage() {
+    public LoadBalancerMessageRequest getRouterMessage() {
         return routerMessage;
     }
 }

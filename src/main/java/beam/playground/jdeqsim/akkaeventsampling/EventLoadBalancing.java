@@ -2,8 +2,8 @@ package beam.playground.jdeqsim.akkaeventsampling;
 
 import akka.actor.*;
 import akka.routing.RoundRobinPool;
+import beam.playground.jdeqsim.akkaeventsampling.messages.LoadBalancerMessageRequest;
 import beam.playground.jdeqsim.akkaeventsampling.messages.ProcessingActorRequest;
-import beam.playground.jdeqsim.akkaeventsampling.messages.RouterMessageRequest;
 import beam.playground.jdeqsim.akkaeventsampling.messages.WorkerMessageRequest;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.events.Event;
@@ -15,9 +15,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
-public class EventLoadBalancingRouter extends UntypedActor {
-    public static final String ACTOR_NAME = "EventLoadBalancingRouter";
-    private static final Logger log = Logger.getLogger(EventLoadBalancingRouter.class);
+public class EventLoadBalancing extends UntypedActor {
+    public static final String ACTOR_NAME = "EventLoadBalancing";
+    private static final Logger log = Logger.getLogger(EventLoadBalancing.class);
     private ActorRef worker;
     private ActorRef processActor;
     private List<Event> buffer;
@@ -30,8 +30,8 @@ public class EventLoadBalancingRouter extends UntypedActor {
 
     @Override
     public void onReceive(Object message) throws Throwable {
-        if (message instanceof RouterMessageRequest) {
-            RouterMessageRequest msg = (RouterMessageRequest) message;
+        if (message instanceof LoadBalancerMessageRequest) {
+            LoadBalancerMessageRequest msg = (LoadBalancerMessageRequest) message;
             if (!msg.getEvent().getEventType().equalsIgnoreCase("specialEvent")) {
                 worker.forward(new WorkerMessageRequest(msg), getContext());
             } else if (msg.getEvent().getEventType().equalsIgnoreCase("specialEvent")) {

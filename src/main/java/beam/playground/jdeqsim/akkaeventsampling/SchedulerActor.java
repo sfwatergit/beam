@@ -2,7 +2,7 @@ package beam.playground.jdeqsim.akkaeventsampling;
 
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
-import beam.playground.jdeqsim.akkaeventsampling.messages.RouterMessageRequest;
+import beam.playground.jdeqsim.akkaeventsampling.messages.LoadBalancerMessageRequest;
 import beam.playground.jdeqsim.akkaeventsampling.messages.SchedulerActorMessage;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
@@ -14,10 +14,10 @@ import org.matsim.vehicles.Vehicle;
 
 public class SchedulerActor extends UntypedActor {
     private static final Logger log = Logger.getLogger(SchedulerActor.class);
-    private ActorRef eventRouter;
+    private ActorRef eventLoadbalancer;
 
-    public SchedulerActor(ActorRef eventRouter) {
-        this.eventRouter = eventRouter;
+    public SchedulerActor(ActorRef eventLoadbalancer) {
+        this.eventLoadbalancer = eventLoadbalancer;
     }
 
     @Override
@@ -25,19 +25,19 @@ public class SchedulerActor extends UntypedActor {
         if (message instanceof SchedulerActorMessage) {
             SchedulerActorMessage msg = (SchedulerActorMessage) message;
             if (msg.getMessageType().equalsIgnoreCase(SchedulerActorMessage.GENERATE_EVENT)) {
-                this.eventRouter.tell(createRouterMessageRequest(), ActorRef.noSender());
+                this.eventLoadbalancer.tell(createRouterMessageRequest(), ActorRef.noSender());
             } else if (msg.getMessageType().equalsIgnoreCase(SchedulerActorMessage.SPECIAL_EVENT)) {
-                this.eventRouter.tell(new RouterMessageRequest(new GenericEvent(msg.getMessageType(), /*LocalDateTime.now().getNano()*/System.currentTimeMillis() % 1000)), ActorRef.noSender());
+                this.eventLoadbalancer.tell(new LoadBalancerMessageRequest(new GenericEvent(msg.getMessageType(), /*LocalDateTime.now().getNano()*/System.currentTimeMillis() % 1000)), ActorRef.noSender());
 
             } else {
-                this.eventRouter.tell(msg, ActorRef.noSender());
+                this.eventLoadbalancer.tell(msg, ActorRef.noSender());
             }
         } else {
             unhandled(message);
         }
     }
 
-    private RouterMessageRequest createRouterMessageRequest(){
+    private LoadBalancerMessageRequest createRouterMessageRequest() {
         Long _eventTime = System.currentTimeMillis() % 1000;
         Double eventTime = _eventTime.doubleValue();
 
@@ -46,7 +46,7 @@ public class SchedulerActor extends UntypedActor {
 
 
         LinkEnterEvent linkEnterEvent = new LinkEnterEvent(eventTime, vehicleId, linkId);
-        RouterMessageRequest routerMessageRequest = new RouterMessageRequest(linkEnterEvent);
-        return routerMessageRequest;
+        LoadBalancerMessageRequest loadBlanceMessageRequest = new LoadBalancerMessageRequest(linkEnterEvent);
+        return loadBlanceMessageRequest;
     }
 }

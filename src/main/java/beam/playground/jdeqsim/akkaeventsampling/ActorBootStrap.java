@@ -25,15 +25,15 @@ public class ActorBootStrap {
             Scenario scenario = ScenarioUtils.loadScenario(loadConfig(args[0]));
 
             ActorSystem system = startActorSystem();
-            ActorRef router = startEventRouter(system);
+            ActorRef eventLoadBalancer = startEventRouter(system);
 
-            ActorRef scheduleActorUtilRef = startAndGetSchedulerUtilActorRef(system, router);
+            ActorRef scheduleActorUtilRef = startAndGetSchedulerUtilActorRef(system, eventLoadBalancer);
 
             SchedulerActorStartJobMessage jobMessage = new SchedulerActorStartJobMessage(500, "specialEvent");
             startSchedulerJob(scheduleActorUtilRef, jobMessage);
 
 
-            CustomEventManager customEventManager = new CustomEventManager(router);
+            CustomEventManager customEventManager = new CustomEventManager(eventLoadBalancer);
             EventsManager eventsManager = customEventManager;
             eventsManager.initProcessing();
 
@@ -58,7 +58,7 @@ public class ActorBootStrap {
     }
 
     private static ActorRef startEventRouter(ActorSystem system) {
-        return system.actorOf(Props.create(EventLoadBalancingRouter.class), EventLoadBalancingRouter.ACTOR_NAME);
+        return system.actorOf(Props.create(EventLoadBalancing.class), EventLoadBalancing.ACTOR_NAME);
     }
 
     private static ActorSystem startActorSystem() {

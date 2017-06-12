@@ -5,10 +5,10 @@ import org.matsim.api.core.v01.events.Event;
 import java.io.Serializable;
 
 
-public class RouterMessageRequest implements IRequest, Serializable {
+public class LoadBalancerMessageRequest implements IRequest, Serializable {
     Event event;
 
-    public RouterMessageRequest(Event event) {
+    public LoadBalancerMessageRequest(Event event) {
         this.event = event;
     }
 

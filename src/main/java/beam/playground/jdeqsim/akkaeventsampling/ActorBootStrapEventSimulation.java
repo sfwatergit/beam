@@ -45,7 +45,7 @@ public class ActorBootStrapEventSimulation {
     }
 
     private static ActorRef startEventRouter(ActorSystem system) {
-        return system.actorOf(Props.create(EventLoadBalancingRouter.class), EventLoadBalancingRouter.ACTOR_NAME);
+        return system.actorOf(Props.create(EventLoadBalancing.class), EventLoadBalancing.ACTOR_NAME);
     }
 
     private static ActorSystem startActorSystem() {
