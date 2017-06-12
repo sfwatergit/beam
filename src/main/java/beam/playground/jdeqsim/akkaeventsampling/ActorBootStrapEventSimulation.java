@@ -29,6 +29,19 @@ public class ActorBootStrapEventSimulation {
         startSchedulerJob(scheduleActorUtilRef, specialEventJobMessage);
 
 
+        try {
+            Thread.sleep(100000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        SchedulerActorStopJobMessage jobStopMessage = new SchedulerActorStopJobMessage(jobMessage.getId());
+        stopSchedulerJob(scheduleActorUtilRef, jobStopMessage);
+        SchedulerActorStopJobMessage jobStopMessage1 = new SchedulerActorStopJobMessage(jobMessage1.getId());
+        stopSchedulerJob(scheduleActorUtilRef, jobStopMessage1);
+        SchedulerActorStopJobMessage jobStopMessage2 = new SchedulerActorStopJobMessage(jobMessage2.getId());
+        stopSchedulerJob(scheduleActorUtilRef, jobStopMessage2);
+        SchedulerActorStopJobMessage specialEventJobStopMessage = new SchedulerActorStopJobMessage(specialEventJobMessage.getId());
+        stopSchedulerJob(scheduleActorUtilRef, specialEventJobStopMessage);
     }
 
     private static ActorRef startEventRouter(ActorSystem system) {
