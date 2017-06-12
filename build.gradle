@@ -108,6 +108,7 @@ dependencies {
     compile group: 'log4j', name: 'log4j', version: '1.2.16'
     compile group: 'org.matsim.contrib', name: 'multimodal', version: '0.8.0'
     compile group: 'org.matsim.contrib', name: 'dvrp', version: '0.9.0'
+    compile group: 'org.matsim.contrib', name: 'util', version: '0.8.0'
     compile group: 'org.objenesis', name: 'objenesis', version: '2.4'
     compile group: 'javax.jms', name: 'jms', version: '1.1'
     compile group: 'javax.media', name: 'jai_core', version: '1.1.3'
@@ -230,9 +231,9 @@ task generateConfig {
                     "build/tscfg-0.8.0.jar",
                     "--spec", "src/main/resources/beam-template.conf",
                     "--scala",
-                    "--pn", "beam.agentsim.config",
+                    "--pn", "beam.sim.config",
                     "--cn", "BeamConfig",
-                    "--dd", "src/main/scala/beam/agentsim/config/"
+                    "--dd", "src/main/scala/beam/sim/config/"
             ]
         }
     }

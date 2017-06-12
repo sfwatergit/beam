@@ -5,13 +5,14 @@ import java.util.concurrent.TimeUnit
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.pattern.ask
 import akka.util.Timeout
-import beam.agentsim.agents.BeamAgentScheduler.{ScheduleTrigger, StartSchedule}
+import beam.agentsim.scheduler.BeamAgentScheduler.{ScheduleTrigger, StartSchedule}
 import beam.agentsim.agents.PersonAgent.PersonData
 import beam.agentsim.agents.TaxiAgent.TaxiData
 import beam.agentsim.agents._
 import beam.agentsim.events.{EventsSubscriber, JsonFriendlyEventWriterXML, PathTraversalEvent, PointProcessEvent}
+import beam.agentsim.scheduler.BeamAgentScheduler
 import beam.router.RoutingMessages.InitializeRouter
-import beam.agentsim.utils.JsonUtils
+import beam.utils.JsonUtils
 import beam.physsim.{DummyPhysSim, InitializePhysSim}
 import beam.router.DummyRouter
 import com.google.inject.Inject

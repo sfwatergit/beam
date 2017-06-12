@@ -5,9 +5,10 @@ import java.util.concurrent.TimeUnit
 import akka.actor.Props
 import akka.pattern.{ask, pipe}
 import beam.agentsim.agents.BeamAgent._
-import beam.agentsim.agents.BeamAgentScheduler._
+import beam.agentsim.scheduler.BeamAgentScheduler._
 import beam.agentsim.agents.TaxiAgent._
 import beam.agentsim.agents.TaxiManager.{RegisterTaxiAvailable, TaxiAvailableAck}
+import beam.agentsim.scheduler.TriggerWithId
 import beam.sim.BeamServices
 import org.matsim.api.core.v01.{Coord, Id}
 import org.slf4j.LoggerFactory
