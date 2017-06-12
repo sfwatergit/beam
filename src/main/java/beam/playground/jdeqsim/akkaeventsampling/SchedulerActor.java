@@ -24,8 +24,11 @@ public class SchedulerActor extends UntypedActor {
     public void onReceive(Object message) throws Throwable {
         if (message instanceof SchedulerActorMessage) {
             SchedulerActorMessage msg = (SchedulerActorMessage) message;
-            if (msg.getMessageType().equalsIgnoreCase(SchedulerActorMessage.GENERATE_EVENT) || msg.getMessageType().equalsIgnoreCase(SchedulerActorMessage.SPECIAL_EVENT)) {
+            if (msg.getMessageType().equalsIgnoreCase(SchedulerActorMessage.GENERATE_EVENT)) {
+                this.eventRouter.tell(createRouterMessageRequest(), ActorRef.noSender());
+            } else if (msg.getMessageType().equalsIgnoreCase(SchedulerActorMessage.SPECIAL_EVENT)) {
                 this.eventRouter.tell(new RouterMessageRequest(new GenericEvent(msg.getMessageType(), /*LocalDateTime.now().getNano()*/System.currentTimeMillis() % 1000)), ActorRef.noSender());
+
             } else {
                 this.eventRouter.tell(msg, ActorRef.noSender());
             }
@@ -38,7 +41,7 @@ public class SchedulerActor extends UntypedActor {
         Long _eventTime = System.currentTimeMillis() % 1000;
         Double eventTime = _eventTime.doubleValue();
 
-        Id<Vehicle> vehicleId = Id.create("v1", org.matsim.vehicles.Vehicle.class);
+        Id<Vehicle> vehicleId = Id.createVehicleId("vehicle1");
         Id<Link> linkId = Id.createLinkId("link1");
 
 
