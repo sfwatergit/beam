@@ -5,7 +5,11 @@ import akka.actor.UntypedActor;
 import beam.playground.jdeqsim.akkaeventsampling.messages.RouterMessageRequest;
 import beam.playground.jdeqsim.akkaeventsampling.messages.SchedulerActorMessage;
 import org.apache.log4j.Logger;
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.GenericEvent;
+import org.matsim.api.core.v01.events.LinkEnterEvent;
+import org.matsim.api.core.v01.network.Link;
+import org.matsim.vehicles.Vehicle;
 
 
 public class SchedulerActor extends UntypedActor {
@@ -28,5 +32,18 @@ public class SchedulerActor extends UntypedActor {
         } else {
             unhandled(message);
         }
+    }
+
+    private RouterMessageRequest createRouterMessageRequest(){
+        Long _eventTime = System.currentTimeMillis() % 1000;
+        Double eventTime = _eventTime.doubleValue();
+
+        Id<Vehicle> vehicleId = Id.create("v1", org.matsim.vehicles.Vehicle.class);
+        Id<Link> linkId = Id.createLinkId("link1");
+
+
+        LinkEnterEvent linkEnterEvent = new LinkEnterEvent(eventTime, vehicleId, linkId);
+        RouterMessageRequest routerMessageRequest = new RouterMessageRequest(linkEnterEvent);
+        return routerMessageRequest;
     }
 }
