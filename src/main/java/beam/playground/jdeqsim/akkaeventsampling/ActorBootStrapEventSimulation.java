@@ -30,7 +30,7 @@ public class ActorBootStrapEventSimulation {
 
 
         try {
-            Thread.sleep(100000);
+            Thread.sleep(50000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

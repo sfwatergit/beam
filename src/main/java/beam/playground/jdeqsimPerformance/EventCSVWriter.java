@@ -21,7 +21,7 @@ public class EventCSVWriter {
 	Map<Integer, Map<String, Integer>> bins = new HashMap<>();
 	Map<String, Map<Integer, Integer>> linkData = new HashMap<>();
 
-    EventCSVWriter(){
+    public EventCSVWriter(){
 		long time = Calendar.getInstance().getTimeInMillis();
 		File f = new File("C:\\ns\\output\\testfile_" + time + ".csv");
 		char separator = ';';
