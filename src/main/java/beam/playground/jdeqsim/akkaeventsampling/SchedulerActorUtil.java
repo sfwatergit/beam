@@ -1,9 +1,6 @@
 package beam.playground.jdeqsim.akkaeventsampling;
 
-import akka.actor.ActorRef;
-import akka.actor.Cancellable;
-import akka.actor.Props;
-import akka.actor.UntypedActor;
+import akka.actor.*;
 import beam.playground.jdeqsim.akkaeventsampling.messages.SchedulerActorMessage;
 import beam.playground.jdeqsim.akkaeventsampling.messages.SchedulerActorStartJobMessage;
 import beam.playground.jdeqsim.akkaeventsampling.messages.SchedulerActorStopJobMessage;
@@ -49,8 +46,15 @@ public class SchedulerActorUtil extends UntypedActor {
             SchedulerActorStartJobMessage msg = (SchedulerActorStartJobMessage) message;
             createScheduleJob(msg.getId(), msg.getTimeInMilliSec(), msg.isOneTimeJob(), msg.getMessageType());
         } else if (message instanceof SchedulerActorStopJobMessage) {
+
+            //system.actorSelection("/user/*") ! msg
+            ActorSelection actorSelection = getContext().system().actorSelection("/user/*");
+            actorSelection.tell("SIM_COMPLETED", ActorRef.noSender());
+
+
             SchedulerActorStopJobMessage msg = (SchedulerActorStopJobMessage) message;
             jobIdVsCancellable.get(msg.getJobId()).cancel();
+
         }
     }
 }

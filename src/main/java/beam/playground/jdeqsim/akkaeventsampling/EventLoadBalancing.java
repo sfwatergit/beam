@@ -41,6 +41,11 @@ public class EventLoadBalancing extends UntypedActor {
                 log.debug("Buffer size" + buffer.size());
                 Dictionary.eventList.clear();
             }
+        }else if(message instanceof String){
+            String msg = (String)message;
+            if(msg == "SIM_COMPLETED"){
+                this.processActor.tell(msg, ActorRef.noSender());
+            }
         }
     }
 }

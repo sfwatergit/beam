@@ -21,6 +21,8 @@ public class EventCSVWriter {
 	Map<Integer, Map<String, Integer>> bins = new HashMap<>();
 	Map<String, Map<Integer, Integer>> linkData = new HashMap<>();
 
+	static EventCSVWriter eventCSVWriter;
+
     public EventCSVWriter(){
 		long time = Calendar.getInstance().getTimeInMillis();
 		File f = new File("C:\\ns\\output\\testfile_" + time + ".csv");
@@ -28,6 +30,13 @@ public class EventCSVWriter {
 		BufferedWriter writer = IOUtils.getBufferedWriter(f.getPath());
 
 		this.csvWriter = new CompactCSVWriter(writer, separator);
+	}
+
+	public static EventCSVWriter getInstance(){
+    	if(eventCSVWriter == null){
+    		eventCSVWriter = new EventCSVWriter();
+		}
+		return eventCSVWriter;
 	}
 
 	public Map<Integer, Map<String, Integer>> getBins(){
@@ -124,7 +133,10 @@ public class EventCSVWriter {
 		}
 	}
 
+	public static boolean isCsvPrinted = false;
 	public void printLinkDataToCSV(){
+
+		isCsvPrinted = true;
 
 		SortedSet<String> links = new TreeSet<String>(linkData.keySet());
 
