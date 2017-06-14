@@ -1,6 +1,9 @@
 package beam.playground.jdeqsim.akkaeventsampling;
 
-import akka.actor.*;
+import akka.actor.ActorRef;
+import akka.actor.Cancellable;
+import akka.actor.Props;
+import akka.actor.UntypedActor;
 import beam.playground.jdeqsim.akkaeventsampling.messages.SchedulerActorMessage;
 import beam.playground.jdeqsim.akkaeventsampling.messages.SchedulerActorStartJobMessage;
 import beam.playground.jdeqsim.akkaeventsampling.messages.SchedulerActorStopJobMessage;
@@ -12,15 +15,15 @@ import java.util.concurrent.TimeUnit;
 
 public class SchedulerActorUtil extends UntypedActor {
     public static final String ACTOR_NAME = "SchedulerUtilActor";
-    private ActorRef eventRouter;
+    private ActorRef eventLoadBalancer;
     private Map<Integer, Cancellable> jobIdVsCancellable = new Hashtable<>();
 
-    public SchedulerActorUtil(ActorRef eventRouter) {
-        this.eventRouter = eventRouter;
+    public SchedulerActorUtil(ActorRef eventLoadBalancer) {
+        this.eventLoadBalancer = eventLoadBalancer;
     }
 
     private void createScheduleJob(int jobId, Long duration, boolean oneTimeJob, String messageType) {
-        ActorRef ref = getContext().actorOf(Props.create(SchedulerActor.class, this.eventRouter));
+        ActorRef ref = getContext().actorOf(Props.create(SchedulerActor.class, this.eventLoadBalancer));
         final SchedulerActorMessage schedulerActorRequest =
                 new SchedulerActorMessage(messageType);
         Cancellable cancellable = null;
@@ -47,11 +50,7 @@ public class SchedulerActorUtil extends UntypedActor {
             createScheduleJob(msg.getId(), msg.getTimeInMilliSec(), msg.isOneTimeJob(), msg.getMessageType());
         } else if (message instanceof SchedulerActorStopJobMessage) {
 
-            //system.actorSelection("/user/*") ! msg
-            ActorSelection actorSelection = getContext().system().actorSelection("/user/*");
-            actorSelection.tell("SIM_COMPLETED", ActorRef.noSender());
-
-
+            this.eventLoadBalancer.tell("SIM_COMPLETED", ActorRef.noSender());
             SchedulerActorStopJobMessage msg = (SchedulerActorStopJobMessage) message;
             jobIdVsCancellable.get(msg.getJobId()).cancel();
 

@@ -28,12 +28,12 @@ public class ProcessActor extends UntypedActor {
 
             String msg = (String)message;
             if(msg == "SIM_COMPLETED"){
-                System.out.println("SIM_COMPLETED received");
+                log.debug("SIM_COMPLETED received");
                 if(EventCSVWriter.isCsvPrinted == false) {
-                    System.out.println("Printing CSV");
+                    log.debug("Printing CSV");
                     csvWriter.printLinkDataToCSV();
                 }else{
-                    System.out.println("CSV already printed");
+                    log.debug("CSV already printed");
                 }
             }
         } else {
@@ -43,9 +43,8 @@ public class ProcessActor extends UntypedActor {
 
     public void logEventList(List<Event> eventList){
 
-
         for(Event event : eventList){
-            System.out.println("Event -> " + event.getTime() + ", Attributes -> " + event.getAttributes());
+            log.debug("Event -> " + event.getTime() + ", Attributes -> " + event.getAttributes());
             csvWriter.logEvent(event);
         }
     }

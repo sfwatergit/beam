@@ -4,6 +4,7 @@ import akka.actor.*;
 import akka.routing.RoundRobinPool;
 import beam.playground.jdeqsim.akkaeventsampling.messages.LoadBalancerMessageRequest;
 import beam.playground.jdeqsim.akkaeventsampling.messages.ProcessingActorRequest;
+import beam.playground.jdeqsim.akkaeventsampling.messages.SchedulerActorMessage;
 import beam.playground.jdeqsim.akkaeventsampling.messages.WorkerMessageRequest;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.events.Event;
@@ -32,9 +33,9 @@ public class EventLoadBalancing extends UntypedActor {
     public void onReceive(Object message) throws Throwable {
         if (message instanceof LoadBalancerMessageRequest) {
             LoadBalancerMessageRequest msg = (LoadBalancerMessageRequest) message;
-            if (!msg.getEvent().getEventType().equalsIgnoreCase("specialEvent")) {
+            if (!msg.getEvent().getEventType().equalsIgnoreCase(SchedulerActorMessage.SPECIAL_EVENT)) {
                 worker.forward(new WorkerMessageRequest(msg), getContext());
-            } else if (msg.getEvent().getEventType().equalsIgnoreCase("specialEvent")) {
+            } else if (msg.getEvent().getEventType().equalsIgnoreCase(SchedulerActorMessage.SPECIAL_EVENT)) {
                 buffer = new ArrayList<>(Dictionary.eventList);
                 this.processActor.tell(new ProcessingActorRequest(buffer), ActorRef.noSender());
                 log.debug("Dictionary size" + Dictionary.eventList.size());
