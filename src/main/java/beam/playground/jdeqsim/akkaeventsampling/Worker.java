@@ -14,7 +14,7 @@ public class Worker extends UntypedActor {
             WorkerMessageRequest msg = (WorkerMessageRequest) message;
             // TODO: 6/2/2017 get event from message and put this message into dictionary
             Dictionary.eventList.add(msg.getRouterMessage().getEvent());
-            log.debug("Worker actor message received" + Dictionary.eventList.size());
+            //log.debug("Worker actor message received" + Dictionary.eventList.size());
         }
     }
 }

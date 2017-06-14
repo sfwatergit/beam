@@ -11,13 +11,17 @@ import org.matsim.api.core.v01.events.LinkEnterEvent;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.vehicles.Vehicle;
 
+import java.util.Random;
+
 
 public class SchedulerActor extends UntypedActor {
     private static final Logger log = Logger.getLogger(SchedulerActor.class);
     private ActorRef eventLoadbalancer;
+    private int[] randomNumberPool;
 
     public SchedulerActor(ActorRef eventLoadbalancer) {
         this.eventLoadbalancer = eventLoadbalancer;
+        randomNumberPool = new Random().ints(100, 5, 120).toArray();
     }
 
     @Override
@@ -40,10 +44,13 @@ public class SchedulerActor extends UntypedActor {
     private LoadBalancerMessageRequest createRouterMessageRequest() {
         Long _eventTime = System.currentTimeMillis() % 1000;
         Double eventTime = _eventTime.doubleValue();
+        int index = new Random().nextInt(randomNumberPool.length);
 
-        Id<Vehicle> vehicleId = Id.createVehicleId("vehicle1");
-        Id<Link> linkId = Id.createLinkId("link1");
-
+        Id<Vehicle> vehicleId = Id.createVehicleId("vehicle" + randomNumberPool[index]);
+        //log.debug("Generate vehicleId"+"vehicle"+ randomNumberPool[index]);
+        index = new Random().nextInt(randomNumberPool.length);
+        Id<Link> linkId = Id.createLinkId("link" + randomNumberPool[index]);
+        //log.debug("Generate linkId"+"link"+ randomNumberPool[index]);
 
         LinkEnterEvent linkEnterEvent = new LinkEnterEvent(eventTime, vehicleId, linkId);
         LoadBalancerMessageRequest loadBlanceMessageRequest = new LoadBalancerMessageRequest(linkEnterEvent);
