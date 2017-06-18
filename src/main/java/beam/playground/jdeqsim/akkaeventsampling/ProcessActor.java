@@ -1,51 +1,47 @@
 package beam.playground.jdeqsim.akkaeventsampling;
 
+import akka.actor.ActorRef;
+import akka.actor.Props;
 import akka.actor.UntypedActor;
+import beam.playground.jdeqsim.akkaeventsampling.Events.EventManager;
+import beam.playground.jdeqsim.akkaeventsampling.messages.NotifyEventSubscriber;
 import beam.playground.jdeqsim.akkaeventsampling.messages.ProcessingActorRequest;
-import beam.playground.jdeqsimPerformance.EventCSVWriter;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.events.Event;
 
 import java.util.Collections;
+import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 
 public class ProcessActor extends UntypedActor {
     public static final String ACTOR_NAME = "Processing_Actor";
     private static final Logger log = Logger.getLogger(ProcessActor.class);
+    private ActorRef eventManagerActor;
 
-    EventCSVWriter csvWriter = EventCSVWriter.getInstance();
+    public void preStart() throws Exception {
+        this.eventManagerActor = getContext().actorOf(Props.create(EventManager.class), EventManager.ACTOR_NAME);
+    }
 
     @Override
     public void onReceive(Object message) throws Throwable {
         if (message instanceof ProcessingActorRequest) {
-            List<Event> eventList = ((ProcessingActorRequest) message).getEventList();
-            Collections.sort(eventList, new EventTimeComparator());
-            log.debug(eventList.get(0).getTime());
-            log.debug(eventList.get(eventList.size() - 1).getTime());
+            ProcessingActorRequest msg = (ProcessingActorRequest) message;
+            log.debug("Message Received in ProcessActor");
 
-            logEventList(eventList);
-        }else if(message instanceof String){
-
-            String msg = (String)message;
-            if(msg == "SIM_COMPLETED"){
-                log.debug("SIM_COMPLETED received");
-                if(EventCSVWriter.isCsvPrinted == false) {
-                    log.debug("Printing CSV");
-                    csvWriter.printLinkDataToCSV();
-                }else{
-                    log.debug("CSV already printed");
-                }
+            Hashtable<String, List<Event>> sortedEventsCollection = new Hashtable<>();
+            for (Map.Entry<String, List<Event>> entry : msg.getEventsCollection().entrySet()) {
+                String key = entry.getKey();
+                List<Event> eventList = msg.getEventsCollection().get(key);
+                Collections.sort(eventList, new EventTimeComparator());
+                sortedEventsCollection.put(key, eventList);
             }
+            this.eventManagerActor.tell(new NotifyEventSubscriber(sortedEventsCollection), ActorRef.noSender());
+
         } else {
             unhandled(message);
         }
     }
 
-    public void logEventList(List<Event> eventList){
 
-        for(Event event : eventList){
-            log.debug("Event -> " + event.getTime() + ", Attributes -> " + event.getAttributes());
-            csvWriter.logEvent(event);
-        }
-    }
 }

@@ -3,6 +3,9 @@ package beam.playground.jdeqsim.akkaeventsampling;
 import akka.actor.UntypedActor;
 import beam.playground.jdeqsim.akkaeventsampling.messages.WorkerMessageRequest;
 import org.apache.log4j.Logger;
+import org.matsim.api.core.v01.events.GenericEvent;
+import org.matsim.api.core.v01.events.LinkEnterEvent;
+import org.matsim.api.core.v01.events.LinkLeaveEvent;
 
 public class Worker extends UntypedActor {
     public static final String ACTOR_NAME = "Worker";
@@ -12,9 +15,14 @@ public class Worker extends UntypedActor {
     public void onReceive(Object message) throws Throwable {
         if (message instanceof WorkerMessageRequest) {
             WorkerMessageRequest msg = (WorkerMessageRequest) message;
-            // TODO: 6/2/2017 get event from message and put this message into dictionary
-            Dictionary.eventList.add(msg.getRouterMessage().getEvent());
-            //log.debug("Worker actor message received" + Dictionary.eventList.size());
+            if (msg.getRouterMessage().getEvent() instanceof LinkEnterEvent) {
+                Dictionary.linkEnterEventList.add(msg.getRouterMessage().getEvent());
+            } else if (msg.getRouterMessage().getEvent() instanceof LinkLeaveEvent) {
+                Dictionary.linkLeaveEventList.add(msg.getRouterMessage().getEvent());
+            } else if (msg.getRouterMessage().getEvent() instanceof GenericEvent) {
+                Dictionary.genericEventList.add(msg.getRouterMessage().getEvent());
+            }
+
         }
     }
 }

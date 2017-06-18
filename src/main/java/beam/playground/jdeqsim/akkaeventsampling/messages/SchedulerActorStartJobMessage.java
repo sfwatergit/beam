@@ -8,12 +8,23 @@ public class SchedulerActorStartJobMessage implements IRequest, Serializable {
     private static int identifier = 0;
     private long timeInMilliSec = 5;
     private boolean oneTimeJob = false;
-    private String messageType;
+    private String eventType;
     private int id;
+    private long syncStartTime = -1;
+    private long binSize = -1;
 
-    public SchedulerActorStartJobMessage(long timeInMilliSec, String messageType) {
+    public SchedulerActorStartJobMessage(long timeInMilliSec, String eventType) {
         this.timeInMilliSec = timeInMilliSec;
-        this.messageType = messageType;
+        this.eventType = eventType;
+        id = identifier++;
+
+    }
+
+    public SchedulerActorStartJobMessage(long timeInMilliSec, String eventType, long syncStartTime, long binSize) {
+        this.timeInMilliSec = timeInMilliSec;
+        this.eventType = eventType;
+        this.syncStartTime = syncStartTime;
+        this.binSize = binSize;
         id = identifier++;
 
     }
@@ -24,8 +35,16 @@ public class SchedulerActorStartJobMessage implements IRequest, Serializable {
         id = identifier++;
     }
 
-    public String getMessageType() {
-        return messageType;
+    public long getSyncStartTime() {
+        return syncStartTime;
+    }
+
+    public long getBinSize() {
+        return binSize;
+    }
+
+    public String getEventType() {
+        return eventType;
     }
 
     public int getId() {

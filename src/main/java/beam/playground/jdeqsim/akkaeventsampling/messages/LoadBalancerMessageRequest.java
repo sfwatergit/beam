@@ -12,6 +12,7 @@ public class LoadBalancerMessageRequest implements IRequest, Serializable {
         this.event = event;
     }
 
+
     public Event getEvent() {
         return event;
     }

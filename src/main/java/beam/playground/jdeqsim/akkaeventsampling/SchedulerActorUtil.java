@@ -22,10 +22,15 @@ public class SchedulerActorUtil extends UntypedActor {
         this.eventLoadBalancer = eventLoadBalancer;
     }
 
-    private void createScheduleJob(int jobId, Long duration, boolean oneTimeJob, String messageType) {
+    private void createScheduleJob(int jobId, Long duration, boolean oneTimeJob, String eventType, long syncStartTime, long binSize) {
         ActorRef ref = getContext().actorOf(Props.create(SchedulerActor.class, this.eventLoadBalancer));
-        final SchedulerActorMessage schedulerActorRequest =
-                new SchedulerActorMessage(messageType);
+        SchedulerActorMessage schedulerActorRequest = null;
+
+        if (syncStartTime != -1 && binSize != -1) {
+            schedulerActorRequest = new SchedulerActorMessage(eventType, syncStartTime, binSize);
+        } else {
+            schedulerActorRequest = new SchedulerActorMessage(eventType);
+        }
         Cancellable cancellable = null;
         if (oneTimeJob) {
             cancellable = getContext().system().scheduler().scheduleOnce(
@@ -47,10 +52,9 @@ public class SchedulerActorUtil extends UntypedActor {
     public void onReceive(Object message) throws Throwable {
         if (message instanceof SchedulerActorStartJobMessage) {
             SchedulerActorStartJobMessage msg = (SchedulerActorStartJobMessage) message;
-            createScheduleJob(msg.getId(), msg.getTimeInMilliSec(), msg.isOneTimeJob(), msg.getMessageType());
+            createScheduleJob(msg.getId(), msg.getTimeInMilliSec(), msg.isOneTimeJob(), msg.getEventType(), msg.getSyncStartTime(), msg.getBinSize());
         } else if (message instanceof SchedulerActorStopJobMessage) {
 
-            this.eventLoadBalancer.tell("SIM_COMPLETED", ActorRef.noSender());
             SchedulerActorStopJobMessage msg = (SchedulerActorStopJobMessage) message;
             jobIdVsCancellable.get(msg.getJobId()).cancel();
 

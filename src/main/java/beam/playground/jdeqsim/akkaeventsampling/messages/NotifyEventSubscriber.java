@@ -7,17 +7,20 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 
-public class ProcessingActorRequest implements IRequest, Serializable {
+/**
+ * Created by salma_000 on 6/18/2017.
+ */
+public class NotifyEventSubscriber implements Serializable {
     Hashtable<String, List<Event>> eventsCollection;
     private List<Event> eventList;
     private String eventType;
 
-    public ProcessingActorRequest(List<Event> eventList, String eventType) {
+    public NotifyEventSubscriber(List<Event> eventList, String eventType) {
         this.eventList = new ArrayList<>(eventList);
         this.eventType = eventType;
     }
 
-    public ProcessingActorRequest(Hashtable<String, List<Event>> eventsCollection) {
+    public NotifyEventSubscriber(Hashtable<String, List<Event>> eventsCollection) {
         this.eventsCollection = new Hashtable<>(eventsCollection);
     }
 
@@ -25,11 +28,11 @@ public class ProcessingActorRequest implements IRequest, Serializable {
         return eventsCollection;
     }
 
-    public String getEventType() {
-        return eventType;
-    }
-
     public List<Event> getEventList() {
         return eventList;
+    }
+
+    public String getEventType() {
+        return eventType;
     }
 }
