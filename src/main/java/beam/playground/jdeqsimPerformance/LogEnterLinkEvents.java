@@ -10,7 +10,7 @@ public class LogEnterLinkEvents implements LinkEnterEventHandler{
 	EventCSVWriter writer2;
 	int counter = 0;
 
-	LogEnterLinkEvents(){
+	public LogEnterLinkEvents(){
 		//writer
 		writer2 = new EventCSVWriter();
 	}
