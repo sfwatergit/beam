@@ -64,7 +64,7 @@ repositories {
     maven { url "http://repo.maven.apache.org/maven2" }
     maven { url "http://download.osgeo.org/webdav/geotools" }
     maven { url "http://dl.bintray.com/matsim/matsim" }
-    maven { url "http://maven.conveyal.com/" }
+//    maven { url "http://maven.conveyal.com/" }
     maven { url "http://repo1.maven.org/maven2" }
     maven { url "http://download.java.net/maven/2/" }
     maven { url "http://people.apache.org/repo/m1-ibiblio-rsync-repository/org.apache.axis2/" }
@@ -122,6 +122,7 @@ dependencies {
     compile group: 'com.github.colinsheppard.matsim_all', name: 'matsim', version: 'master-SNAPSHOT', changing: true
     compile group: 'com.github.colinsheppard', name: 'OpenTripPlanner', version: 'otp-1.0.0-beam-SNAPSHOT', changing: true
     compile group: 'com.github.colinsheppard', name: 'pt2matsim', version: 'master-SNAPSHOT', changing: true
+    compile group: 'com.conveyal', name: 'r5', version: '2.1.1'
 
     /////////////////////////////////
     // Scala dependencies
