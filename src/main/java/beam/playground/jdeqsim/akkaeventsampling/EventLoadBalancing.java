@@ -21,6 +21,9 @@ import java.util.stream.Collectors;
 public class EventLoadBalancing extends UntypedActor {
     public static final String ACTOR_NAME = "EventLoadBalancing";
     private static final Logger log = Logger.getLogger(EventLoadBalancing.class);
+    public static int receiveLinkEnterEventCount = 0;
+    public static int receiveLinkLeaveEventCount = 0;
+    public static int receiveGenericEventCount = 0;
     private ActorRef worker;
     private ActorRef processActor;
 
@@ -35,10 +38,10 @@ public class EventLoadBalancing extends UntypedActor {
         if (message instanceof LoadBalancerMessageRequest) {
             LoadBalancerMessageRequest msg = (LoadBalancerMessageRequest) message;
             if (!msg.getEvent().getEventType().equalsIgnoreCase(SchedulerActorMessage.PHY_SIM_TIME_SYNC_EVENT)) {
-                //log.debug("Worker Message"+ msg.getEvent().getClass());
+
                 worker.forward(new WorkerMessageRequest(msg), getContext());
             } else if (msg.getEvent().getEventType().equalsIgnoreCase(SchedulerActorMessage.PHY_SIM_TIME_SYNC_EVENT)) {
-                //log.debug("Processing Message"+ msg.getEvent().getClass());
+
 
                 long syncStartTime = ((PhySimTimeSyncEvent) msg.getEvent()).getStartSyncTime();
                 long syncEndTime = ((PhySimTimeSyncEvent) msg.getEvent()).getEndSyncTime();
@@ -58,8 +61,15 @@ public class EventLoadBalancing extends UntypedActor {
                 eventsCollection.put(SchedulerActorMessage.GENERIC_EVENT, genericEventList);
                 eventsCollection.put(SchedulerActorMessage.LINK_ENTER_EVENT, linkEnterEventList);
                 eventsCollection.put(SchedulerActorMessage.LINK_LEAVE_EVENT, linkLeaveEventList);
-
-                this.processActor.tell(new ProcessingActorRequest(eventsCollection), ActorRef.noSender());
+                if (genericEventList.size() == 0 && linkEnterEventList.size() == 0 && linkLeaveEventList.size() == 0) {
+                    log.debug("Total Receive Link Enter Events" + EventLoadBalancing.receiveLinkEnterEventCount);
+                    log.debug("Total Receive Link Leave Events" + EventLoadBalancing.receiveLinkLeaveEventCount);
+                    log.debug("Total Receive Generic Events" + EventLoadBalancing.receiveGenericEventCount);
+                    log.debug("Total Not Process Link Enter Events" + Dictionary.linkEnterEventList.size());
+                    log.debug("Total Not Process Link Leave Events" + Dictionary.linkLeaveEventList.size());
+                    log.debug("Total Not Process Generic Events" + Dictionary.genericEventList.size());
+                }
+                this.processActor.tell(new ProcessingActorRequest(eventsCollection, syncStartTime, syncEndTime), ActorRef.noSender());
 
             }
         } else {

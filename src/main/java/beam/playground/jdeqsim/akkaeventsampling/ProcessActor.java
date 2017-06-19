@@ -27,7 +27,7 @@ public class ProcessActor extends UntypedActor {
     public void onReceive(Object message) throws Throwable {
         if (message instanceof ProcessingActorRequest) {
             ProcessingActorRequest msg = (ProcessingActorRequest) message;
-            log.debug("Message Received in ProcessActor");
+            log.debug("Time Bin " + msg.getSynStartTime() + "-" + msg.getSynEndTime());
 
             Hashtable<String, List<Event>> sortedEventsCollection = new Hashtable<>();
             for (Map.Entry<String, List<Event>> entry : msg.getEventsCollection().entrySet()) {
@@ -36,6 +36,7 @@ public class ProcessActor extends UntypedActor {
                 Collections.sort(eventList, new EventTimeComparator());
                 sortedEventsCollection.put(key, eventList);
             }
+
             this.eventManagerActor.tell(new NotifyEventSubscriber(sortedEventsCollection), ActorRef.noSender());
 
         } else {

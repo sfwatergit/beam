@@ -39,9 +39,22 @@ public class ActorBootStrapEventSimulation {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        /*SchedulerActorStopJobMessage jobStopMessage = new SchedulerActorStopJobMessage(jobMessage.getId());
+        SchedulerActorStopJobMessage jobStopMessage = new SchedulerActorStopJobMessage(jobMessage.getId());
         stopSchedulerJob(scheduleActorUtilRef, jobStopMessage);
-        SchedulerActorStopJobMessage jobStopMessage1 = new SchedulerActorStopJobMessage(jobMessage1.getId());
+
+        log.debug("Total Generated Link Enter Events" + Worker.linkEnterEventCount);
+        log.debug("Total Generated Link Leave Events" + Worker.linkLeaveEventCount);
+        log.debug("Total Generated Generic Events" + Worker.linkEnterEventCount);
+        /*try {
+            Thread.sleep(30000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        log.debug("Total Receive Link Enter Events" + EventLoadBalancing.receiveLinkEnterEventCount);
+        log.debug("Total Receive Link Leave Events" + EventLoadBalancing.receiveLinkLeaveEventCount);
+        log.debug("Total Receive Generic Events" + EventLoadBalancing.receiveGenericEventCount);*/
+        /*SchedulerActorStopJobMessage jobStopMessage1 = new SchedulerActorStopJobMessage(jobMessage1.getId());
         stopSchedulerJob(scheduleActorUtilRef, jobStopMessage1);
         SchedulerActorStopJobMessage jobStopMessage2 = new SchedulerActorStopJobMessage(jobMessage2.getId());
         stopSchedulerJob(scheduleActorUtilRef, jobStopMessage2);

@@ -9,7 +9,7 @@ public class CSVLinkEnterEventListener implements IEventListener {
     @Override
     public void callBack(List<Event> eventList) {
         for (Event event : eventList) {
-            System.out.println("CSVLinkEnterEventListener->>>>>>>>>>>>>" + event.getEventType());
+            //System.out.println("CSVLinkEnterEventListener->>>>>>>>>>>>>" + event.getEventType());
 
         }
     }
