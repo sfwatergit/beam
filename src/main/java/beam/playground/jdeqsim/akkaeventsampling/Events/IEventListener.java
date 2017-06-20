@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface IEventListener {
     void callBack(List<Event> eventList);
+    void simCompleted();
 }

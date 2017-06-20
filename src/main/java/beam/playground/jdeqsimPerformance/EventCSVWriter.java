@@ -25,7 +25,7 @@ public class EventCSVWriter {
 
     public EventCSVWriter(){
 		long time = Calendar.getInstance().getTimeInMillis();
-		File f = new File("C:\\ns\\output\\testfile_" + time + ".csv");
+		File f = new File("C:\\ns\\output\\testfile_v2_" + time + ".csv");
 		char separator = ';';
 		BufferedWriter writer = IOUtils.getBufferedWriter(f.getPath());
 
