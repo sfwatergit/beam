@@ -15,10 +15,11 @@ public class CompareEventCSV {
     1. Load a CSV file
     2. Create a collection based on the CSV file
     */
+    int binSize = 300;
 
-    public Map<String, Map<Integer, Integer>> readCSVFile(String fileName){
+    public Map<String, Map<String, Integer>> readCSVFile(String fileName){
 
-        Map<String, Map<Integer, Integer>> linkDataMap = new HashMap<>();
+        Map<String, Map<String, Integer>> linkDataMap = new HashMap<>();
         //String fileName1 = "C:\\ns\\output\\testfile_bin_1496875267302.csv";
         try {
             FileReader fileReader = new FileReader(fileName);
@@ -32,13 +33,21 @@ public class CompareEventCSV {
 
                 String[] linkData = eventsData.get(j);
                 String linkName = linkData[0];
-                Map<Integer, Integer> linkEventCountsPerBin = new HashMap<>();
+                Map<String, Integer> linkEventCountsPerBin = new HashMap<>();
+
+                int startBin = 0;
+                int endBin = binSize;
                 for(int i=1; i < linkData.length; i++){
 
+                    String binLabel = "[" + startBin + "," + endBin + ")";
+
                     if(linkData[i].isEmpty())
-                        linkEventCountsPerBin.put(i, 0);
+                        linkEventCountsPerBin.put(binLabel, 0);
                     else
-                        linkEventCountsPerBin.put(i, Integer.parseInt(linkData[i]));
+                        linkEventCountsPerBin.put(binLabel, Integer.parseInt(linkData[i]));
+
+                    startBin = endBin;
+                    endBin = startBin + binSize;
                 }
                 linkDataMap.put(linkName, linkEventCountsPerBin);
             }
@@ -81,19 +90,19 @@ public class CompareEventCSV {
     }
 
 
-    public void compareAndPrint(Map<String, Map<Integer, Integer>> data1, Map<String, Map<Integer, Integer>> data2){
+    public void compareAndPrint(Map<String, Map<String, Integer>> data1, Map<String, Map<String, Integer>> data2){
 
         int countForDifferentData = 0;
         List<String> links = getSortedKeys(data1.keySet());
 
         for(String key: links){
             System.out.println("Link Name " + key);
-            Map<Integer, Integer> linkData1 = data1.get(key);
-            Map<Integer, Integer> linkData2 = data2.get(key);
+            Map<String, Integer> linkData1 = data1.get(key);
+            Map<String, Integer> linkData2 = data2.get(key);
 
-            SortedSet<Integer> keySet2 = new TreeSet(linkData1.keySet());
+            List<String> keySet2 = getSortedKeys(linkData1.keySet());
 
-            for(Integer key2: keySet2){
+            for(String key2: keySet2){
                 int count1 = linkData1.get(key2);
                 int count2 = linkData2.get(key2);
                 System.out.println(key2 + " -> (" + count1 + ", " + count2 + ")");
@@ -111,13 +120,13 @@ public class CompareEventCSV {
         CompareEventCSV compareEventCSV = new CompareEventCSV();
 
         String fileName1 = "C:\\ns\\output\\testfile_bin_1496875267302.csv";
-        Map<String, Map<Integer, Integer>> dataForSimRun1 = compareEventCSV.readCSVFile(fileName1);
+        Map<String, Map<String, Integer>> dataForSimRun1 = compareEventCSV.readCSVFile(fileName1);
 
         String fileName2 = "C:\\ns\\output\\testfile_bin_1497906481020.csv";
-        Map<String, Map<Integer, Integer>> dataForSimRun2 = compareEventCSV.readCSVFile(fileName2);
+        Map<String, Map<String, Integer>> dataForSimRun2 = compareEventCSV.readCSVFile(fileName2);
 
         String fileName3 = "C:\\ns\\output\\testfile_bin_1497907798783.csv";
-        Map<String, Map<Integer, Integer>> dataForSimRun3 = compareEventCSV.readCSVFile(fileName3);
+        Map<String, Map<String, Integer>> dataForSimRun3 = compareEventCSV.readCSVFile(fileName3);
 
         /*compareEventCSV.printData(dataForSimRun1);
         compareEventCSV.printData(dataForSimRun2);*/
