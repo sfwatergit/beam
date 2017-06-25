@@ -1,5 +1,8 @@
 package beam.playground.jdeqsimPerformance.akkaeventsim;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.Props;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
@@ -106,11 +109,18 @@ public class RealTimeEventGenerator {
 
     public static void main(String args[]){
 
+        ActorSystem system = ActorSystem.create("akkaeventsim");
+        ActorRef eventManagerActor = system.actorOf(Props.create(EventManagerActor.class), "EVENT_MANAGER");
+        ActorRef eventBufferActor = system.actorOf(Props.create(EventBufferActor.class), "EVENT_BUFFER");
+
+
+
         RealTimeEventGenerator eventGenerator = new RealTimeEventGenerator();
-        for(int i = 0; i < 2000; i++){
+        for(int i = 0; i < 1000; i++){
 
             Event event = eventGenerator.generateEvent();
-            System.out.println("Event event -> " + event);
+            //System.out.println("Generated Event -> " + event);
+            eventBufferActor.tell(event, ActorRef.noSender());
         }
 
     }

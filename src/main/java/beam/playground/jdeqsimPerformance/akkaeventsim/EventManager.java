@@ -70,6 +70,12 @@ public class EventManager extends UntypedActor{
 
             PhysSimTimeSyncEvent physSimTimeSyncEvent = (PhysSimTimeSyncEvent)message;
             processEvents(physSimTimeSyncEvent);
+        }else if(message instanceof List){
+            List<Event> events = (List<Event>)message;
+            System.out.println("Events received ->>> " + events.size());
+            for(Event event : events) {
+                System.out.println("Event -> " + event);
+            }
         }
     }
 }
