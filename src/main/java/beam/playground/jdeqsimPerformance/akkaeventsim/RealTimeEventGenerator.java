@@ -18,20 +18,28 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class RealTimeEventGenerator {
 
-    int eventsCount = 0;
     int noOfEventsGenerated = 100;
-    double timeRangeMin = 0;
-    double timeRangeMax = 50000;
-
+    double timeRangeMax = 86400;
+    int eventsCount = 0;
+    double timeRangeMin = 1;
     int noOfVehicles = 100;
     int noOfLinks = 100;
-
     int noOfEventTypes = 2;
+    double maxEventTimeReached = 0;
+
     public static final int LINK_ENTER_EVENT = 1;
     public static final int LINK_LEAVE_EVENT = 2;
     public static final int PHYSSIM_TIME_SYNC_EVENT = 3;
 
     Random random = new Random();
+
+    public Event generatePhysSimTimeSyncEvent(){
+
+        double eventTime = getRandomEventTime();
+        Event event = new PhysSimTimeSyncEvent(eventTime);
+        timeRangeMin = eventTime;
+        return event;
+    }
 
     public Event generateEvent() {
 
@@ -40,9 +48,9 @@ public class RealTimeEventGenerator {
         Id<Vehicle> vehicleId = getRandomVehicleId();
         Id<Link> linkId = getRandomLinkId();
 
-        if(eventsCount % 100 == 0){
+        /*if(eventsCount % 100 == 0){
             eventType = PHYSSIM_TIME_SYNC_EVENT;
-        }
+        }*/
 
         Event event = generateEvent(eventTime, eventType, vehicleId, linkId);
         return event;
@@ -75,6 +83,10 @@ public class RealTimeEventGenerator {
             }
         }
 
+        if(event.getTime() > maxEventTimeReached){
+            maxEventTimeReached = event.getTime();
+        }
+
         eventsCount++;
 
         return event;
@@ -83,7 +95,8 @@ public class RealTimeEventGenerator {
     public double getRandomEventTime(){
 
         //return timeRangeMin + (timeRangeMax - timeRangeMin) * random.nextDouble();
-        return timeRangeMin + random.nextDouble();
+        //return timeRangeMin + random.nextDouble();
+        return ThreadLocalRandom.current().nextDouble(timeRangeMin, timeRangeMax);
     }
 
     public int getRandomEventType(){
@@ -116,12 +129,56 @@ public class RealTimeEventGenerator {
 
 
         RealTimeEventGenerator eventGenerator = new RealTimeEventGenerator();
-        for(int i = 0; i < 1000; i++){
+        long startTime = System.currentTimeMillis();
+        long noOfEvents = 10000000;
 
-            Event event = eventGenerator.generateEvent();
+        int j = 0;
+        for(int i = 0; i < noOfEvents; i++){
+
+
             //System.out.println("Generated Event -> " + event);
-            eventBufferActor.tell(event, ActorRef.noSender());
+
+            //System.out.println(event.toString());
+
+            /*if(i % 1000000 == 0){
+                System.out.println(System.currentTimeMillis());
+            }*/
+            long currentTime = System.currentTimeMillis();
+            if(currentTime - startTime > 1000){
+
+                Event event = eventGenerator.generatePhysSimTimeSyncEvent();
+                eventBufferActor.tell(event, ActorRef.noSender());
+
+                System.out.println("P -> Event -> " + event);
+
+                System.out.println("Event Generated for this PhyssimTimeSync event " + j);
+                startTime = currentTime;
+                j = 0;
+            }else{
+                Event event = eventGenerator.generateEvent();
+                eventBufferActor.tell(event, ActorRef.noSender());
+                j++;
+                //System.out.println("Event -> " + event);
+            }
         }
+
+
+        Event event = null;
+        do {
+            event = eventGenerator.generatePhysSimTimeSyncEvent();
+            eventBufferActor.tell(event, ActorRef.noSender());
+        }while (eventGenerator.maxEventTimeReached > event.getTime());
+
+        long endTime = System.currentTimeMillis();
+        long timeDuration = endTime - startTime;
+
+        System.out.println("Start " + startTime);
+        System.out.println("End " + endTime);
+        System.out.println(noOfEvents/timeDuration);
+
+
+        eventBufferActor.tell("SIM_COMPLETED", ActorRef.noSender());
+        //system.actorSelection("/user/*").tell("SIM_COMPLETED", ActorRef.noSender());
 
     }
 }

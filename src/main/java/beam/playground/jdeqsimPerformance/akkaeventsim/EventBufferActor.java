@@ -48,11 +48,17 @@ public class EventBufferActor extends UntypedActor {
         }else if(message instanceof Event){
             Event event = (Event)message;
 
-            if(event.getTime() < physSimTimeSyncEvent.getTime()){
+            if(physSimTimeSyncEvent != null && event.getTime() < physSimTimeSyncEvent.getTime()){
                 throw new InvalidEventTime("The timestamp for the event is smaller than the last PhysSyncTimeEvent timestamp");
             }
 
             eventQueue.add(event);
+        }else if(message instanceof String){
+            String _message = (String)message;
+            if(_message.equals("SIM_COMPLETED")){
+                System.out.println("Sim completed received in event buffer");
+                getContext().actorSelection("../EVENT_MANAGER").tell("SIM_COMPLETED", getSelf());
+            }
         }
     }
 }

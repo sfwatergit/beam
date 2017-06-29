@@ -25,14 +25,22 @@ public class LogEnterLinkEvents implements LinkEnterEventHandler{
 		// TODO Use a writer to Log all the details of an event to a CSV file
 		//System.out.println(event.toString());
 
-		System.out.println(event.getAttributes() + ", counter -> " + counter);
+		//System.out.println(event.getAttributes() + ", counter -> " + counter);
 		counter++;
+
+		if(counter % 100000 == 0){
+			System.out.println("Counter -> " + counter);
+		}
 		/* Todo
 		* 	1. Create a CSV Writer
 		* 	2. Write each event into a csv file
 		* 	3.
 		*/
 		writer2.logEvent(event);
+	}
+
+	public EventCSVWriter getCSVWriter(){
+		return writer2;
 	}
 }
 
