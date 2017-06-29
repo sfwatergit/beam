@@ -49,7 +49,7 @@ public class EventBufferActor extends UntypedActor {
             Event event = (Event)message;
 
             if(event.getTime() < physSimTimeSyncEvent.getTime()){
-                throw new InvalidEventTime();
+                throw new InvalidEventTime("The timestamp for the event is smaller than the last PhysSyncTimeEvent timestamp");
             }
 
             eventQueue.add(event);

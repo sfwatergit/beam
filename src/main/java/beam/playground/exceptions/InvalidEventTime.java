@@ -5,8 +5,16 @@ package beam.playground.exceptions;
  */
 public class InvalidEventTime extends Exception{
 
-    @Override
-    public String getMessage() {
-        return "The timestamp for the event is smaller than the last PhysSimTimeSyncEvent timestamp";
+
+    public InvalidEventTime(String message) {
+        super(message);
+    }
+
+    public InvalidEventTime(Throwable cause) {
+        super(cause);
+    }
+
+    public InvalidEventTime(String message, Throwable cause) {
+        super(message, cause);
     }
 }
