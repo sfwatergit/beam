@@ -7,6 +7,6 @@ public class InvalidEventTime extends Exception{
 
     @Override
     public String getMessage() {
-        return "The timestamp for the event is smaller than the last PhysSyncTimeEvent timestamp";
+        return "The timestamp for the event is smaller than the last PhysSimTimeSyncEvent timestamp";
     }
 }
