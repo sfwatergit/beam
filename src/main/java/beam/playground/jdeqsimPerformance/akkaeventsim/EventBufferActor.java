@@ -1,6 +1,7 @@
 package beam.playground.jdeqsimPerformance.akkaeventsim;
 
 import akka.actor.UntypedActor;
+import beam.playground.exceptions.InvalidEventTime;
 import org.matsim.api.core.v01.events.Event;
 
 import java.util.ArrayList;
@@ -14,6 +15,8 @@ import java.util.Queue;
 public class EventBufferActor extends UntypedActor {
 
     Queue<Event> eventQueue = new PriorityQueue<>(100, new EventTimeComparator());
+
+    PhysSimTimeSyncEvent physSimTimeSyncEvent = null;
 
     public EventBufferActor(){
 
@@ -38,12 +41,17 @@ public class EventBufferActor extends UntypedActor {
     public void onReceive(Object message) throws Throwable {
         if (message instanceof PhysSimTimeSyncEvent) {
 
-            PhysSimTimeSyncEvent physSimTimeSyncEvent = (PhysSimTimeSyncEvent)message;
+            physSimTimeSyncEvent = (PhysSimTimeSyncEvent)message;
             List<Event> events = getEvents(physSimTimeSyncEvent.getTime());
             getContext().actorSelection("../EVENT_MANAGER").tell(events, getSelf());
 
         }else if(message instanceof Event){
             Event event = (Event)message;
+
+            if(event.getTime() < physSimTimeSyncEvent.getTime()){
+                throw new InvalidEventTime();
+            }
+
             eventQueue.add(event);
         }
     }
