@@ -11,4 +11,5 @@ to enable powerful and scalable analysis of urban transportation systems.
 BEAM is documented on [readthedocs](http://beam.readthedocs.io/en/akka/)
 
 ## Project website: 
-http://www.beam-model.net/
+http://beam.lbl.gov/
+
