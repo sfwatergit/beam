@@ -13,6 +13,8 @@ import org.matsim.api.core.v01.events.LinkLeaveEvent;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.vehicles.Vehicle;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -24,13 +26,13 @@ public class EventGeneratorActor extends UntypedActor {
     public static final int noOfLinks = 1000;
     //LoggingAdapter log = Logging.getLogger(getContext().system(), this);
     private static final Logger log = Logger.getLogger(EventGeneratorActor.class);
+    private static final int perMilliSecondEventCount = 5;
     private static double eventMinTimeRange = 1;
     private static double eventMaxTimeRange = 100;
     private ActorRef bufferActor;
     private int binSize = 100;
     private int PhySimEventCounter = 0;
     private Random random = new Random();
-
     public EventGeneratorActor(ActorRef bufferActor) {
         this.bufferActor = bufferActor;
     }
@@ -40,13 +42,13 @@ public class EventGeneratorActor extends UntypedActor {
         if (message instanceof GenerateEventMessage) {
             GenerateEventMessage msg = (GenerateEventMessage) message;
 
-            this.bufferActor.tell(createEvent(msg), ActorRef.noSender());
+            this.bufferActor.tell(generateEvents(perMilliSecondEventCount, msg), ActorRef.noSender());
         } else {
             unhandled(message);
         }
     }
 
-    private BufferEventMessage createEvent(GenerateEventMessage generateEventMessage) {
+    private Event createEvent(GenerateEventMessage generateEventMessage) {
         Event event = null;
         int randomVehicleId = getRandomInt(1, noOfVehicles);
         Id<Vehicle> vehicleId = Id.createVehicleId("vehicle" + randomVehicleId);
@@ -75,7 +77,7 @@ public class EventGeneratorActor extends UntypedActor {
         if (generateEventMessage.getEventType() == null)
             log.debug("Create Event " + generateEventMessage.getEventType());
 
-        return new BufferEventMessage(event);
+        return event;
 
     }
 
@@ -88,7 +90,15 @@ public class EventGeneratorActor extends UntypedActor {
             EventGeneratorActor.eventMinTimeRange = binSize * (this.PhySimEventCounter);
         }
         EventGeneratorActor.eventMaxTimeRange = binSize * (this.PhySimEventCounter + 1);
-        log.debug("Bin Range " + EventGeneratorActor.eventMinTimeRange + "---" + EventGeneratorActor.eventMaxTimeRange);
+        //log.debug("Bin Range " + EventGeneratorActor.eventMinTimeRange + "---" + EventGeneratorActor.eventMaxTimeRange);
+    }
+
+    private BufferEventMessage generateEvents(int count, GenerateEventMessage generateEventMessage) {
+        List<Event> generatedEventList = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            generatedEventList.add(createEvent(generateEventMessage));
+        }
+        return new BufferEventMessage(generatedEventList, generateEventMessage.getEventType());
     }
 
 
