@@ -14,7 +14,7 @@ import org.apache.log4j.Logger;
  */
 public class EventSimMain {
     private static final Logger log = Logger.getLogger(EventSimMain.class);
-
+    public static long startTime;
     public static void main(String[] args) {
         ActorSystem system = loadActorSystem();
 
@@ -33,6 +33,8 @@ public class EventSimMain {
 
         StartEventGeneratorMessage jobMessage3 = new StartEventGeneratorMessage(1000, GenerateEventMessage.PHY_SIM_TIME_SYNC_EVENT);
         startEventGeneration(EventGeneratorActorWrapperRef, jobMessage3);
+        startTime = System.currentTimeMillis();
+
         /*try {
             Thread.sleep(50000);
         } catch (InterruptedException e) {
@@ -65,48 +67,20 @@ public class EventSimMain {
     }
 
     private static void startLinkLeaveScheduler(ActorRef EventGeneratorActorWrapperRef) {
-        for (int i = 1; i < 1000; i++) {
-            StartEventGeneratorMessage jobMessage1 = new StartEventGeneratorMessage(i, GenerateEventMessage.LINK_LEAVE_EVENT);
+        for (int i = 1; i < 40; i++) {
+            StartEventGeneratorMessage jobMessage1 = new StartEventGeneratorMessage(1, GenerateEventMessage.LINK_LEAVE_EVENT);
             startEventGeneration(EventGeneratorActorWrapperRef, jobMessage1);
 
         }
-        /*StartEventGeneratorMessage jobMessage1 = new StartEventGeneratorMessage(900, GenerateEventMessage.LINK_LEAVE_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage1);
-        StartEventGeneratorMessage jobMessage2 = new StartEventGeneratorMessage(850, GenerateEventMessage.LINK_LEAVE_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage2);
-        StartEventGeneratorMessage jobMessage3 = new StartEventGeneratorMessage(800, GenerateEventMessage.LINK_LEAVE_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage3);
-        StartEventGeneratorMessage jobMessage4 = new StartEventGeneratorMessage(750, GenerateEventMessage.LINK_LEAVE_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage4);
-        StartEventGeneratorMessage jobMessage5 = new StartEventGeneratorMessage(700, GenerateEventMessage.LINK_LEAVE_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage5);
-        StartEventGeneratorMessage jobMessage6 = new StartEventGeneratorMessage(650, GenerateEventMessage.LINK_LEAVE_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage6);
-        StartEventGeneratorMessage jobMessage7 = new StartEventGeneratorMessage(600, GenerateEventMessage.LINK_LEAVE_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage7);
-        StartEventGeneratorMessage jobMessage8 = new StartEventGeneratorMessage(, GenerateEventMessage.LINK_LEAVE_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage8);
-        StartEventGeneratorMessage jobMessage9 = new StartEventGeneratorMessage(20, GenerateEventMessage.LINK_LEAVE_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage9);
-        StartEventGeneratorMessage jobMessage10 = new StartEventGeneratorMessage(10, GenerateEventMessage.LINK_LEAVE_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage10);
-        StartEventGeneratorMessage jobMessage11 = new StartEventGeneratorMessage(5, GenerateEventMessage.LINK_LEAVE_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage11);*/
+
     }
 
     private static void startLinkEnterScheduler(ActorRef EventGeneratorActorWrapperRef) {
-        for (int i = 1; i < 1000; i++) {
-            StartEventGeneratorMessage jobMessage1 = new StartEventGeneratorMessage(i, GenerateEventMessage.LINK_ENTER_EVENT);
+        for (int i = 1; i < 40; i++) {
+            StartEventGeneratorMessage jobMessage1 = new StartEventGeneratorMessage(1, GenerateEventMessage.LINK_ENTER_EVENT);
             startEventGeneration(EventGeneratorActorWrapperRef, jobMessage1);
 
         }
-        /*StartEventGeneratorMessage jobMessage1 = new StartEventGeneratorMessage(100, GenerateEventMessage.LINK_ENTER_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage1);
-        StartEventGeneratorMessage jobMessage2 = new StartEventGeneratorMessage(80, GenerateEventMessage.LINK_LEAVE_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage2);
-        StartEventGeneratorMessage jobMessage3 = new StartEventGeneratorMessage(60, GenerateEventMessage.LINK_ENTER_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage3);
-        StartEventGeneratorMessage jobMessage4 = new StartEventGeneratorMessage(40, GenerateEventMessage.LINK_LEAVE_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage4);*/
+
     }
 }

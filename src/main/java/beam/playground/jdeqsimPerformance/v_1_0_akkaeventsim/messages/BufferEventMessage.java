@@ -11,10 +11,12 @@ import java.util.List;
  */
 public class BufferEventMessage implements Serializable {
     private Event event;
-    private List<Event> eventList;
+    private List<Event> eventList = null;
     private String eventType;
-    public BufferEventMessage(Event event) {
+
+    public BufferEventMessage(Event event, String eventType) {
         this.event = event;
+        this.eventType = eventType;
     }
 
     public BufferEventMessage(List<Event> eventList, String eventType) {

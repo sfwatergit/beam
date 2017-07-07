@@ -24,7 +24,7 @@ public class EventsBufferActor extends UntypedActor {
     private static final Logger log = Logger.getLogger(EventsBufferActor.class);
     //LoggingAdapter log = Logging.getLogger(getContext().system(), this);
     public static long receivedEventCount = 0;
-    Queue<Event> eventQueue = new PriorityQueue<>(1000, new EventTimeComparator());
+    Queue<Event> eventQueue = new PriorityQueue<>(10000, new EventTimeComparator());
     private ActorRef processActor;
 
     public void preStart() throws Exception {
@@ -37,13 +37,27 @@ public class EventsBufferActor extends UntypedActor {
             BufferEventMessage msg = (BufferEventMessage) message;
             //log.debug("Received Message" + msg.getEvent().toString());
             if (!msg.getEventType().equalsIgnoreCase(GenerateEventMessage.PHY_SIM_TIME_SYNC_EVENT)) {
-                for (Event event : msg.getEventList()) {
-                    receivedEventCount++;
-                    this.eventQueue.add(event);
+                if (msg.getEventList() != null) {
+                    for (Event event : msg.getEventList()) {
+                        receivedEventCount++;
+                        this.eventQueue.add(event);
+                    }
                 }
-                //this.eventQueue.add(msg.getEvent());
+                if (msg.getEvent() != null) {
+                    receivedEventCount++;
+                    this.eventQueue.add(msg.getEvent());
+                }
+                if (receivedEventCount == 10000000) {
+                    receivedEventCount = 0;
+                    log.debug("Duration to generate 10000000 in sec =" + ((System.currentTimeMillis() - EventSimMain.startTime) / 1000));
+                }
+
             } else {
-                PhysSimTimeSyncEvent phyTimEvent = (PhysSimTimeSyncEvent) msg.getEventList().get(0);
+                PhysSimTimeSyncEvent phyTimEvent = null;
+                if (msg.getEventList() != null)
+                    phyTimEvent = (PhysSimTimeSyncEvent) msg.getEventList().get(0);
+                else
+                    phyTimEvent = (PhysSimTimeSyncEvent) msg.getEvent();
                 this.processActor.tell(new ProcessActorMessage(getEvents(phyTimEvent.getTimeThreshold())), ActorRef.noSender());
             }
 
