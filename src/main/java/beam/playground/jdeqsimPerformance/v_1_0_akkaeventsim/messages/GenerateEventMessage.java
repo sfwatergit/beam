@@ -8,6 +8,7 @@ import java.io.Serializable;
 public class GenerateEventMessage implements Serializable {
     public static final String LINK_ENTER_EVENT = "LinkEnterEvent";
     public static final String GENERIC_EVENT = "GenericEvent";
+    public static final String ALL_EVENT = "AllEvent";
     public static final String LINK_LEAVE_EVENT = "LinkLeaveEvent";
     public static final String PHY_SIM_TIME_SYNC_EVENT = "PhySimTimeSyncEvent";
     private String eventType;

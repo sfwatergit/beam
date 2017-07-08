@@ -3,6 +3,7 @@ package beam.playground.jdeqsimPerformance.v_1_0_akkaeventsim;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import beam.playground.jdeqsimPerformance.v_1_0_akkaeventsim.listener.EventListener;
 import beam.playground.jdeqsimPerformance.v_1_0_akkaeventsim.messages.GenerateEventMessage;
 import beam.playground.jdeqsimPerformance.v_1_0_akkaeventsim.messages.StartEventGeneratorMessage;
 import beam.playground.jdeqsimPerformance.v_1_0_akkaeventsim.messages.StopEventGeneratorMessage;
@@ -13,29 +14,34 @@ import org.apache.log4j.Logger;
  */
 public class EventSimMain {
     private static final Logger log = Logger.getLogger(EventSimMain.class);
-
+    public static long startTime;
     public static void main(String[] args) {
         ActorSystem system = loadActorSystem();
 
         ActorRef bufferActorRef = createEventBufferActor(system);
         ActorRef EventGeneratorActorWrapperRef = createEventGeneratorActorWrapper(system, bufferActorRef);
 
-        StartEventGeneratorMessage jobMessage = new StartEventGeneratorMessage(200, GenerateEventMessage.LINK_ENTER_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage);
-       /* StartEventGeneratorMessage jobMessage1 = new StartEventGeneratorMessage(50, GenerateEventMessage.LINK_LEAVE_EVENT);
-        startEventGeneration(EventGeneratorActorWrapperRef, jobMessage1);
-        StartEventGeneratorMessage jobMessage2 = new StartEventGeneratorMessage(200, GenerateEventMessage.GENERIC_EVENT);
+        //EventManagerActor.registerLinkEnterEventListener(new LinkEnterEventListener());
+        //EventManagerActor.registerLinkLeaveEventListener(new LinkLeaveEventListener());
+        EventManagerActor.registerEventListener(new EventListener());
+
+        startLinkLeaveScheduler(EventGeneratorActorWrapperRef);
+        startLinkEnterScheduler(EventGeneratorActorWrapperRef);
+
+        /*StartEventGeneratorMessage jobMessage2 = new StartEventGeneratorMessage(200, GenerateEventMessage.GENERIC_EVENT);
         startEventGeneration(EventGeneratorActorWrapperRef, jobMessage2);*/
 
         StartEventGeneratorMessage jobMessage3 = new StartEventGeneratorMessage(1000, GenerateEventMessage.PHY_SIM_TIME_SYNC_EVENT);
         startEventGeneration(EventGeneratorActorWrapperRef, jobMessage3);
-        try {
+        startTime = System.currentTimeMillis();
+
+        /*try {
             Thread.sleep(50000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         StopEventGeneratorMessage jobStopMessage = new StopEventGeneratorMessage(jobMessage.getId());
-        stopEventGeneration(EventGeneratorActorWrapperRef, jobStopMessage);
+        stopEventGeneration(EventGeneratorActorWrapperRef, jobStopMessage);*/
 
 
     }
@@ -60,5 +66,21 @@ public class EventSimMain {
         return system.actorOf(Props.create(EventsBufferActor.class), EventsBufferActor.ACTOR_NAME);
     }
 
+    private static void startLinkLeaveScheduler(ActorRef EventGeneratorActorWrapperRef) {
+        for (int i = 1; i < 40; i++) {
+            StartEventGeneratorMessage jobMessage1 = new StartEventGeneratorMessage(1, GenerateEventMessage.LINK_LEAVE_EVENT);
+            startEventGeneration(EventGeneratorActorWrapperRef, jobMessage1);
 
+        }
+
+    }
+
+    private static void startLinkEnterScheduler(ActorRef EventGeneratorActorWrapperRef) {
+        for (int i = 1; i < 40; i++) {
+            StartEventGeneratorMessage jobMessage1 = new StartEventGeneratorMessage(1, GenerateEventMessage.LINK_ENTER_EVENT);
+            startEventGeneration(EventGeneratorActorWrapperRef, jobMessage1);
+
+        }
+
+    }
 }

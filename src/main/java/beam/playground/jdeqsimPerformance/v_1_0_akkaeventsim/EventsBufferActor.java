@@ -3,7 +3,7 @@ package beam.playground.jdeqsimPerformance.v_1_0_akkaeventsim;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import beam.playground.jdeqsimPerformance.akkaeventsim.EventTimeComparator;
+import beam.playground.jdeqsim.akkaeventsampling.EventTimeComparator;
 import beam.playground.jdeqsimPerformance.v_1_0_akkaeventsim.eventprocessor.EventProcessActor;
 import beam.playground.jdeqsimPerformance.v_1_0_akkaeventsim.messages.BufferEventMessage;
 import beam.playground.jdeqsimPerformance.v_1_0_akkaeventsim.messages.GenerateEventMessage;
@@ -21,9 +21,10 @@ import java.util.Queue;
  */
 public class EventsBufferActor extends UntypedActor {
     public static final String ACTOR_NAME = "EventsBufferActor";
-    //LoggingAdapter log = Logging.getLogger(getContext().system(), this);
     private static final Logger log = Logger.getLogger(EventsBufferActor.class);
-    Queue<Event> eventQueue = new PriorityQueue<>(100, new EventTimeComparator());
+    //LoggingAdapter log = Logging.getLogger(getContext().system(), this);
+    public static long receivedEventCount = 0;
+    Queue<Event> eventQueue = new PriorityQueue<>(10000, new EventTimeComparator());
     private ActorRef processActor;
 
     public void preStart() throws Exception {
@@ -34,11 +35,29 @@ public class EventsBufferActor extends UntypedActor {
     public void onReceive(Object message) throws Throwable {
         if (message instanceof BufferEventMessage) {
             BufferEventMessage msg = (BufferEventMessage) message;
-            log.debug("Received Message" + msg.getEvent().toString());
-            if (!msg.getEvent().getEventType().equalsIgnoreCase(GenerateEventMessage.PHY_SIM_TIME_SYNC_EVENT)) {
-                this.eventQueue.add(msg.getEvent());
+            //log.debug("Received Message" + msg.getEvent().toString());
+            if (!msg.getEventType().equalsIgnoreCase(GenerateEventMessage.PHY_SIM_TIME_SYNC_EVENT)) {
+                if (msg.getEventList() != null) {
+                    for (Event event : msg.getEventList()) {
+                        receivedEventCount++;
+                        this.eventQueue.add(event);
+                    }
+                }
+                if (msg.getEvent() != null) {
+                    receivedEventCount++;
+                    this.eventQueue.add(msg.getEvent());
+                }
+                if (receivedEventCount == 10000000) {
+                    receivedEventCount = 0;
+                    log.debug("Duration to generate 10000000 in sec =" + ((System.currentTimeMillis() - EventSimMain.startTime) / 1000));
+                }
+
             } else {
-                PhysSimTimeSyncEvent phyTimEvent = (PhysSimTimeSyncEvent) msg.getEvent();
+                PhysSimTimeSyncEvent phyTimEvent = null;
+                if (msg.getEventList() != null)
+                    phyTimEvent = (PhysSimTimeSyncEvent) msg.getEventList().get(0);
+                else
+                    phyTimEvent = (PhysSimTimeSyncEvent) msg.getEvent();
                 this.processActor.tell(new ProcessActorMessage(getEvents(phyTimEvent.getTimeThreshold())), ActorRef.noSender());
             }
 

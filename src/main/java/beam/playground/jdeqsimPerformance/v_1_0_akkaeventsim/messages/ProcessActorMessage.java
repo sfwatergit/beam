@@ -14,7 +14,10 @@ public class ProcessActorMessage implements Serializable {
 
     public ProcessActorMessage(List<Event> eventList) {
         this.eventList = new ArrayList<>(eventList);
+
     }
 
-
+    public List<Event> getEventList() {
+        return eventList;
+    }
 }

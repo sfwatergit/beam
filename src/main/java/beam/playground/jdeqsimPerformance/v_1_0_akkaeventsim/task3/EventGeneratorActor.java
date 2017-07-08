@@ -1,8 +1,11 @@
-package beam.playground.jdeqsimPerformance.v_1_0_akkaeventsim;
+package beam.playground.jdeqsimPerformance.v_1_0_akkaeventsim.task3;
 
 import akka.actor.ActorRef;
+import akka.actor.Props;
 import akka.actor.UntypedActor;
-import beam.playground.jdeqsimPerformance.v_1_0_akkaeventsim.messages.BufferEventMessage;
+import beam.playground.jdeqsimPerformance.v_1_0_akkaeventsim.PhysSimTimeSyncEvent;
+import beam.playground.jdeqsimPerformance.v_1_0_akkaeventsim.event_generator_v_2_0.messages.EventSimCompleteMessage;
+import beam.playground.jdeqsimPerformance.v_1_0_akkaeventsim.event_generator_v_2_0.messages.GenerateActorMessage;
 import beam.playground.jdeqsimPerformance.v_1_0_akkaeventsim.messages.GenerateEventMessage;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
@@ -15,37 +18,52 @@ import org.matsim.vehicles.Vehicle;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Created by salma_000 on 7/4/2017.
+ * Created by salma_000 on 7/5/2017.
  */
 public class EventGeneratorActor extends UntypedActor {
+    public static final String ACTOR_NAME = "EventGeneratorAct";
     public static final int noOfVehicles = 100;
     public static final int noOfLinks = 1000;
-    //LoggingAdapter log = Logging.getLogger(getContext().system(), this);
     private static final Logger log = Logger.getLogger(EventGeneratorActor.class);
-    private static final int perMilliSecondEventCount = 10;
-    private static double eventMinTimeRange = 1;
-    private static double eventMaxTimeRange = 100;
-    private ActorRef bufferActor;
-    private int binSize = 100;
-    private int PhySimEventCounter = 0;
-    private Random random = new Random();
-    public EventGeneratorActor(ActorRef bufferActor) {
-        this.bufferActor = bufferActor;
+    //private ActorRef consumerActor;
+    public static long Gen_Start_Time;
+    public List<ActorRef> actorRefList = new ArrayList<ActorRef>();
+    private int numberOfActor = 2;
+
+    @Override
+    public void preStart() throws Exception {
+        for (int i = 0; i < numberOfActor; i++) {
+            actorRefList.add(getContext().actorOf(Props.create(EventConsumerActor.class), EventConsumerActor.ACTOR_NAME + i));
+        }
     }
 
     @Override
     public void onReceive(Object message) throws Throwable {
-        if (message instanceof GenerateEventMessage) {
-            GenerateEventMessage msg = (GenerateEventMessage) message;
+        if (message instanceof GenerateActorMessage) {
+            GenerateActorMessage msg = (GenerateActorMessage) message;
+            long startTime = System.nanoTime();
+            Gen_Start_Time = startTime;
+            long endTime;// = System.nanoTime();
+            for (int i = 0; i < msg.getNumberOfEvent(); i++) {
+                ActorRef consumer = actorRefList.get(i % 2);
+                consumer.tell(this.createEvent(new GenerateEventMessage(msg.getEventType()))
+                        , ActorRef.noSender());
 
-            this.bufferActor.tell(generateEvents(perMilliSecondEventCount, msg), ActorRef.noSender());
-        } else {
-            unhandled(message);
+
+            }
+            endTime = System.nanoTime();
+            System.out.println("Total time consumed for generating events in nano second" + (endTime - startTime));
+            for (int i = 0; i < numberOfActor; i++) {
+                ActorRef consumer = actorRefList.get(i);
+                consumer.tell(new EventSimCompleteMessage(msg.getNumberOfEvent()), ActorRef.noSender());
+            }
+
+
         }
+
     }
 
     private Event createEvent(GenerateEventMessage generateEventMessage) {
@@ -55,7 +73,7 @@ public class EventGeneratorActor extends UntypedActor {
         int randomLinkId = getRandomInt(1, noOfLinks);
         Id<Link> linkId = Id.createLinkId("link" + randomLinkId);
 
-        double eventTime = eventMinTimeRange + (eventMaxTimeRange - eventMinTimeRange) * random.nextDouble();
+        double eventTime = System.currentTimeMillis();
         switch (generateEventMessage.getEventType()) {
             case GenerateEventMessage.LINK_ENTER_EVENT:
                 event = new LinkEnterEvent(eventTime, vehicleId, linkId);
@@ -67,9 +85,7 @@ public class EventGeneratorActor extends UntypedActor {
                 event = new GenericEvent(generateEventMessage.getEventType(), eventTime);
                 break;
             case GenerateEventMessage.PHY_SIM_TIME_SYNC_EVENT:
-                event = new PhysSimTimeSyncEvent(generateEventMessage.getEventType(), System.currentTimeMillis() % 1000, eventMaxTimeRange);
-                PhySimEventCounter++;
-                setEventTimeRange();
+                event = new PhysSimTimeSyncEvent(generateEventMessage.getEventType(), System.currentTimeMillis() % 1000, System.currentTimeMillis());
                 break;
             default:
                 throw new IllegalArgumentException("Invalid event type: " + generateEventMessage.getEventType());
@@ -83,22 +99,6 @@ public class EventGeneratorActor extends UntypedActor {
 
     public int getRandomInt(int min, int max) {
         return ThreadLocalRandom.current().nextInt(min, max + 1);
-    }
-
-    public void setEventTimeRange() {
-        if (this.PhySimEventCounter > 0) {
-            EventGeneratorActor.eventMinTimeRange = binSize * (this.PhySimEventCounter);
-        }
-        EventGeneratorActor.eventMaxTimeRange = binSize * (this.PhySimEventCounter + 1);
-        //log.debug("Bin Range " + EventGeneratorActor.eventMinTimeRange + "---" + EventGeneratorActor.eventMaxTimeRange);
-    }
-
-    private BufferEventMessage generateEvents(int count, GenerateEventMessage generateEventMessage) {
-        List<Event> generatedEventList = new ArrayList<>(count);
-        for (int i = 0; i < count; i++) {
-            generatedEventList.add(createEvent(generateEventMessage));
-        }
-        return new BufferEventMessage(generatedEventList, generateEventMessage.getEventType());
     }
 
 
