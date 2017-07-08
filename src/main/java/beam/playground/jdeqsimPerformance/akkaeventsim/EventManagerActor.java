@@ -17,7 +17,7 @@ public class EventManagerActor extends UntypedActor{
 
     List<EventHandler> eventHandlers = new ArrayList<>();
     LogEnterLinkEvents eventHandler = new LogEnterLinkEvents();
-
+    long totalEventsReceived = 0;
     public EventManagerActor(){
 
         eventHandlers.add(eventHandler);
@@ -27,8 +27,10 @@ public class EventManagerActor extends UntypedActor{
     public void onReceive(Object message) throws Throwable {
         if(message instanceof List){
             List<Event> events = (List<Event>)message;
-            System.out.println("Events received ->>> " + events.size());
 
+            totalEventsReceived = totalEventsReceived + events.size();
+            long currentTime = System.currentTimeMillis();
+            System.out.println("Events received ->>> " + events.size() + ", total events received " + totalEventsReceived + " current time " + currentTime);
             for(EventHandler eventHandler: eventHandlers) {
 
                 for(Event event : events) {
