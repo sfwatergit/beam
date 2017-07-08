@@ -31,7 +31,7 @@ public class ProducerActor extends UntypedActor{
 
     private void generateEvents(){
         long _startTime = System.currentTimeMillis();
-        startTime = System.currentTimeMillis();
+        startTime = _startTime;
 
         for(int i = 0; i < noOfEvents; i++){
 
@@ -46,7 +46,7 @@ public class ProducerActor extends UntypedActor{
             }
         }
         endTime = System.currentTimeMillis();
-
+        Util.calculateRateOfEventsReceived(getSelf().path().toString(), _startTime, endTime, noOfEvents);
     }
 
     @Override
@@ -55,6 +55,7 @@ public class ProducerActor extends UntypedActor{
         if(message instanceof String){
             if(((String) message).equalsIgnoreCase("GENERATE_EVENTS")){
                 consumer.tell("START", getSelf());
+
                 generateEvents();
                 consumer.tell("END", getSelf());
             }

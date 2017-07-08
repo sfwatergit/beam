@@ -17,13 +17,22 @@ public class ProducerActorBuffer extends UntypedActor{
     long startTime = 0;
     long endTime = 0;
     long noOfEvents = 10000000;
+    long sentEvents = 0;
     EventGenerator eventGenerator = new EventGenerator();
     ActorRef consumer = null;
+    int bufferSize = 10;
 
     List<Event> events = new ArrayList<>();
 
     ProducerActorBuffer(ActorRef consumer){
+
         this.consumer = consumer;
+    }
+
+    ProducerActorBuffer(ActorRef consumer, int bufferSize){
+
+        this.consumer = consumer;
+        this.bufferSize = bufferSize;
     }
 
 
@@ -45,19 +54,26 @@ public class ProducerActorBuffer extends UntypedActor{
             }
 
 
-            if(events.size() == 10) {
+            if(events.size() == bufferSize) {
                 consumer.tell(events, getSelf());
+                sentEvents += events.size();
                 events.clear();
             }
         }
 
+        endTime = System.currentTimeMillis();
+        //System.out.println("Events sent " + sentEvents);
         if(!events.isEmpty()){
             consumer.tell(events, getSelf());
+            sentEvents += events.size();
+            endTime = System.currentTimeMillis();
         }
+        //System.out.println("Total Events sent " + sentEvents);
 
-        endTime = System.currentTimeMillis();
-        SimulationTimes simulationTimes = new SimulationTimes(_startTime, endTime, noOfEvents);
-        consumer.tell(simulationTimes, getSelf());
+        //SimulationTimes simulationTimes = new SimulationTimes(_startTime, endTime, noOfEvents);
+
+
+        Util.calculateRateOfEventsReceived(getSelf().path().toString(), _startTime, endTime, noOfEvents);
     }
 
     @Override
@@ -65,7 +81,9 @@ public class ProducerActorBuffer extends UntypedActor{
 
         if(message instanceof String){
             if(((String) message).equalsIgnoreCase("GENERATE_EVENTS")){
+                consumer.tell("START", getSelf());
                 generateEvents();
+                consumer.tell("END", getSelf());
             }
         }
     }

@@ -25,6 +25,8 @@ public class ConsumerActor extends UntypedActor{
     int startMessageCount = 0;
     int endMessageCount = 0;
 
+    boolean simulationCompletedFlag = false;
+
     ConsumerActor(){
     }
 
@@ -38,9 +40,12 @@ public class ConsumerActor extends UntypedActor{
 
         if(message instanceof Event){
 
+            if(simulationCompletedFlag == true) {
+                System.out.println("Message received after simulationCompletedFlag is set " + simulationCompletedFlag);
+            }
             if(noOfEventsReceived == 0){
                 firstEventReceivedTime = System.currentTimeMillis();
-                System.out.println(getSelf().path().toString() + " -> First Event Received at " + firstEventReceivedTime);
+                //System.out.println(getSelf().path().toString() + " -> First Event Received at " + firstEventReceivedTime);
             }
             eventReceived = (Event)message;
             //eventQueue.add(eventReceived);
@@ -51,7 +56,7 @@ public class ConsumerActor extends UntypedActor{
 
             if(noOfEventsReceived == 10000000){
 
-                System.out.println(getSelf().path().toString() + " -> Last Event Received at " + lastEventReceiptTime);
+                //System.out.println(getSelf().path().toString() + " -> Last Event Received at " + lastEventReceiptTime);
             }
 
             if(nextConsumer != null){
@@ -71,7 +76,8 @@ public class ConsumerActor extends UntypedActor{
 
             if(noOfEventsReceived == 10000000){
 
-                System.out.println(getSelf().path().toString() + " -> Last Event Received at " + lastEventReceiptTime);
+                System.out.println(getSelf().path().toString() + " -> Last Event Received at " + lastEventReceiptTime + ", noOfEventsReceived: " + noOfEventsReceived);
+
             }
 
             if(nextConsumer != null){
@@ -79,6 +85,7 @@ public class ConsumerActor extends UntypedActor{
             }
         }else if(message instanceof SimulationTimes){
 
+            simulationCompletedFlag = true;
             SimulationTimes simulationTimes = (SimulationTimes)message;
 
             System.out.println(getSelf().toString() + ", First Event Received at " + firstEventReceivedTime +
@@ -91,7 +98,7 @@ public class ConsumerActor extends UntypedActor{
                 nextConsumer.tell(message, getSelf());
             }else{
 
-                Util.calculateRateOfEventsReceived(getSelf().toString(), firstEventReceivedTime, lastEventReceiptTime, noOfEventsReceived);
+                Util.calculateRateOfEventsReceived(getSelf().path().toString(), firstEventReceivedTime, lastEventReceiptTime, noOfEventsReceived);
 
             }
         }else if(message instanceof String){
@@ -104,7 +111,7 @@ public class ConsumerActor extends UntypedActor{
                 endMessageCount++;
                 if(endMessageCount == startMessageCount){
 
-                    Util.calculateRateOfEventsReceived(getSelf().toString(), firstEventReceivedTime, lastEventReceiptTime, noOfEventsReceived);
+                    Util.calculateRateOfEventsReceived(getSelf().path().toString(), firstEventReceivedTime, lastEventReceiptTime, noOfEventsReceived);
 
                 }
             }

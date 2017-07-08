@@ -35,7 +35,7 @@ public class Util {
         double noOfEventsPerSec = (double)noOfEventsReceived/timeLapseInSec;
 
         System.out.println("Actor Name => " + actorName);
-        System.out.println("Rate of Events Received Per Second = " + noOfEventsPerSec + ", Total Received = " + noOfEventsReceived +
+        System.out.println("Rate/sec = " + noOfEventsPerSec + ", Total Received = " + noOfEventsReceived +
                 ", Time Interval (" + firstEventReceivedTime + " - " + lastEventReceiptTime + " = " + timeLapse + "ms, [" + timeLapseInSec + "s])");
         System.out.println("--");
     }
