@@ -1,6 +1,8 @@
 package beam.playground.jdeqsimPerformance.akkaeventsim;
 
+import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
+import beam.playground.exceptions.InvalidEventTime;
 import beam.playground.jdeqsimPerformance.akkaeventsim.events.PhysSimTimeSyncEvent;
 import beam.playground.jdeqsimPerformance.akkaeventsim.util.EventTimeComparator;
 import beam.playground.jdeqsimPerformance.simpleeventsim.SimulationTimes;
@@ -30,7 +32,13 @@ public class EventBufferActor extends UntypedActor {
     List<Event> eventLinkedList = new LinkedList<>();
     //Queue<Event> eventQueue = new PriorityQueue<>(100, new EventTimeComparator());
 
+    ActorRef eventManagerActor = null;
+
     public EventBufferActor(){
+    }
+
+    public EventBufferActor(ActorRef eventManagerActor){
+        this.eventManagerActor = eventManagerActor;
     }
 
     public List<Event> getEvents(double timeThreshold){
@@ -83,10 +91,12 @@ public class EventBufferActor extends UntypedActor {
 
         physSimTimeSyncEvent = (PhysSimTimeSyncEvent)message;
         List<Event> events = getEvents(physSimTimeSyncEvent.getTime());
-        getContext().actorSelection("../EVENT_MANAGER").tell(events, getSelf());
+
+        //getContext().actorSelection("../EVENT_MANAGER").tell(events, getSelf());
+        eventManagerActor.tell(events, getSelf());
     }
 
-    public void handleEvent(Object message){
+    public void handleEvent(Object message) throws InvalidEventTime{
 
         /*
         Event event = (Event)message;
@@ -97,38 +107,25 @@ public class EventBufferActor extends UntypedActor {
 
             eventQueue.add(event);
          */
-
         if(simulationCompletedFlag == true) {
             System.out.println("Message received after simulationCompletedFlag is set " + simulationCompletedFlag);
         }
-        if(noOfEventsReceived == 0){
-            firstEventReceivedTime = System.currentTimeMillis();
-            //System.out.println(getSelf().path().toString() + " -> First Event Received at " + firstEventReceivedTime);
-        }
+        updateStatistics(1);
         eventReceived = (Event)message;
+
+        if(physSimTimeSyncEvent != null && eventReceived.getTime() < physSimTimeSyncEvent.getTime()){
+            throw new InvalidEventTime("The timestamp for the event is smaller than the last PhysSyncTimeEvent timestamp");
+        }
+
         eventQueue.add(eventReceived);
         //eventList.add(eventReceived);
         //eventLinkedList.add(eventReceived);
-        noOfEventsReceived++;
-        lastEventReceiptTime = System.currentTimeMillis();
-
-        if(noOfEventsReceived == 10000000){
-            //System.out.println(getSelf().path().toString() + " -> Last Event Received at " + lastEventReceiptTime);
-        }
     }
 
     public void handleEventList(Object message){
-        if(noOfEventsReceived == 0){
-            firstEventReceivedTime = System.currentTimeMillis();
-            //System.out.println(getSelf().path().toString() + " -> First Event Received at " + firstEventReceivedTime);
-        }
-        List<Event> eventsReceived = (List<Event>)message;
-        noOfEventsReceived += eventsReceived.size();
-        lastEventReceiptTime = System.currentTimeMillis();
 
-        if(noOfEventsReceived == 10000000){
-            //System.out.println(getSelf().path().toString() + " -> Last Event Received at " + lastEventReceiptTime + ", noOfEventsReceived: " + noOfEventsReceived);
-        }
+        List<Event> eventsReceived = (List<Event>)message;
+        updateStatistics(eventsReceived.size());
     }
 
     public void handleMessage(Object message){
@@ -144,11 +141,21 @@ public class EventBufferActor extends UntypedActor {
         if(((String) message).equalsIgnoreCase("START")){
             startMessageCount++;
 
-        }else if(((String) message).equalsIgnoreCase("END")){
+        }else if(((String) message).equalsIgnoreCase("END")) {
             endMessageCount++;
-            if(endMessageCount == startMessageCount){
+            if (endMessageCount == startMessageCount) {
                 Util.calculateRateOfEventsReceived(getSelf().path().toString(), firstEventReceivedTime, lastEventReceiptTime, noOfEventsReceived);
+
+                eventManagerActor.tell("END", getSelf());
             }
         }
+    }
+
+    public void updateStatistics(long receivedEvents){
+        if(noOfEventsReceived == 0){
+            firstEventReceivedTime = System.currentTimeMillis();
+        }
+        lastEventReceiptTime = System.currentTimeMillis();
+        noOfEventsReceived += receivedEvents;
     }
 }
