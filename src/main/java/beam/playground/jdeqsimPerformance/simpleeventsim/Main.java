@@ -17,8 +17,8 @@ public class Main {
 
 
         // Actor System with 1 Producer 1 consumer
-        System.out.println("2 Actor System - Actor System with 1 Producer 1 consumer\n---------");
-        ActorRef consumer1 = system.actorOf(Props.create(ConsumerActor.class), "Consumer1");
+        /*System.out.println("2 Actor System - Actor System with 1 Producer 1 consumer\n---------");
+        ActorRef consumer1 = system.actorOf(Props.create(ConsumerActor.class), "Consumer1");*/
 
         // Actor System with 1 Producer 2 consumers
         /*System.out.println("3 Actor System - Actor System with 1 Producer 2 consumers\n---------");
@@ -46,8 +46,29 @@ public class Main {
         ActorRef consumer2 = system.actorOf(Props.create(ConsumerActor.class, consumer3), "Consumer2");
         ActorRef consumer1 = system.actorOf(Props.create(ConsumerActor.class, consumer2), "Consumer1");*/
 
+        ActorRef lastConsumer = null;
+        int noOfConsumers = 1;
+//        noOfConsumers = 2;
+        noOfConsumers = 3;
+        noOfConsumers = 4;
+//        noOfConsumers = 5;
+        int counter = noOfConsumers;
 
-        ActorRef producer1 = system.actorOf(Props.create(ProducerActor.class, consumer1), "Producer1");
+        for(int i = 0; i < noOfConsumers; i++){
+
+            if(lastConsumer == null) {
+                lastConsumer = system.actorOf(Props.create(ConsumerActor.class), "Consumer" + counter--);
+            }else{
+                ActorRef consumer = system.actorOf(Props.create(ConsumerActor.class, lastConsumer), "Consumer" + counter--);
+                lastConsumer = consumer;
+            }
+        }
+
+        //System.out.println(">>> " + (noOfConsumers + 1) + " Actor System - Actor System with 1 Producer " + noOfConsumers + " Consumer (with PQ)");
+        //System.out.println(">>> " + (noOfConsumers + 1) + " Actor System - Actor System with 1 Producer " + noOfConsumers + " Consumer (with LinkedList)");
+        System.out.println(">>> " + (noOfConsumers + 1) + " Actor System - Actor System with 1 Producer " + noOfConsumers + " Consumer (with ArrayList)");
+        System.out.println("---------");
+        ActorRef producer1 = system.actorOf(Props.create(ProducerActor.class, lastConsumer), "Producer1");
         producer1.tell("GENERATE_EVENTS", ActorRef.noSender());
 
     }
@@ -62,22 +83,31 @@ public class Main {
 
         ActorRef consumer1 = system.actorOf(Props.create(ConsumerActor.class), "Consumer1");
 
-        /*System.out.println(">>> 2 Actor System - With bufferSize=10\n---------");
-        ActorRef producer = system.actorOf(Props.create(ProducerActorBuffer.class, consumer1), "Producer");
-        producer.tell("GENERATE_EVENTS", ActorRef.noSender());*/
+        int bufferSize = 1000;
+        bufferSize = 10000;
+        bufferSize = 20000;
+        bufferSize = 30000;
+        bufferSize = 40000;
+        bufferSize = 50000;
+//        bufferSize = 60000;
+//        bufferSize = 70000;
+//        bufferSize = 80000;
+//        bufferSize = 90000;
+        bufferSize = 100000;
+        bufferSize = 500000;
+//        bufferSize = 600000;
+//        bufferSize = 800000;
+//        bufferSize = 900000;
+        bufferSize = 1000000;
+        bufferSize = 5000000;
+        bufferSize = 1;
+        bufferSize = 10;
+        bufferSize = 100;
 
-        /*System.out.println(">>> 2 Actor System - With bufferSize=100\n---------");
-        ActorRef producer = system.actorOf(Props.create(ProducerActorBuffer.class, consumer1, 100), "Producer");
-        producer.tell("GENERATE_EVENTS", ActorRef.noSender());*/
 
-/*
-        System.out.println(">>> 2 Actor System - With bufferSize=1000\n---------");
-        ActorRef producer = system.actorOf(Props.create(ProducerActorBuffer.class, consumer1, 1000), "Producer");
-        producer.tell("GENERATE_EVENTS", ActorRef.noSender());
-*/
-
-        System.out.println(">>> 2 Actor System - With bufferSize=10000\n---------");
-        ActorRef producer = system.actorOf(Props.create(ProducerActorBuffer.class, consumer1, 10000), "Producer");
+        System.out.println(">>> 2 Actor System - With bufferSize=" + bufferSize);
+        System.out.println("---------");
+        ActorRef producer = system.actorOf(Props.create(ProducerActorBuffer.class, consumer1, bufferSize), "Producer");
         producer.tell("GENERATE_EVENTS", ActorRef.noSender());
     }
 
@@ -86,30 +116,26 @@ public class Main {
         ActorSystem system = ActorSystem.create("simpleakkaeventsim3");
 
         // Actor System with 1 consumer
-        System.out.println("2 Actor System \n---------");
         ActorRef consumer1 = system.actorOf(Props.create(ConsumerActor.class), "Consumer1");
 
+        long totalNoOfEvents = 10000000;
+        long noOfProducers = 2;
+        long noOfEventsPerProducer = totalNoOfEvents/noOfProducers;
 
-        long noOfEvents = 5000000;
+        System.out.println(">>>" + (noOfProducers + 1) + " Actor System - " + noOfProducers + " Producers , 1 Consumer");
+        System.out.println("---------");
 
-        ActorRef producer1 = system.actorOf(Props.create(ProducerActor.class, consumer1, noOfEvents), "Producer1");
-        ActorRef producer2 = system.actorOf(Props.create(ProducerActor.class, consumer1, noOfEvents), "Producer2");
-
-        System.out.println("Starting Producer 1 " + System.currentTimeMillis());
-        producer1.tell("GENERATE_EVENTS", ActorRef.noSender());
-        System.out.println("Starting Producer 2 " + System.currentTimeMillis());
-        producer2.tell("GENERATE_EVENTS", ActorRef.noSender());
-
-        //SimulationTimes simulationTimes = new SimulationTimes(_startTime, endTime, noOfEvents);
-        //consumer.tell(simulationTimes, getSelf());
-        /*producer1.tell("END", ActorRef.noSender());
-        producer2.tell("END", ActorRef.noSender());*/
+        for(int i = 1; i <= noOfProducers; i++){
+            //System.out.println("Starting Producer " + i + " at " + System.currentTimeMillis());
+            ActorRef producer = system.actorOf(Props.create(ProducerActor.class, consumer1, noOfEventsPerProducer), "Producer" + i);
+            producer.tell("GENERATE_EVENTS", ActorRef.noSender());
+        }
     }
 
     public static void main(String args[]){
 
-        //task0();
+        task0();
         //task1();
-        task2();
+        //task2();
     }
 }

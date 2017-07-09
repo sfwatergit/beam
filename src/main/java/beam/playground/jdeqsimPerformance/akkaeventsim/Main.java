@@ -3,6 +3,8 @@ package beam.playground.jdeqsimPerformance.akkaeventsim;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import beam.playground.jdeqsimPerformance.akkaeventsim.generators.RandomEventGenerator;
+import beam.playground.jdeqsimPerformance.akkaeventsim.events.PhysSimTimeSyncEvent;
 
 import java.util.Calendar;
 
@@ -14,7 +16,7 @@ public class Main {
     public static void main(String args[]){
 
         /**
-         * Create an EventGenerator instance and generate events and put them in a Queue
+         * Create an RandomEventGenerator instance and generate events and put them in a Queue
          * Create a scheduler that will create PhysSimTimeSyncEvent after a certain interval
          * Create an EventManager that will receive the PhysSimTimeSyncEvent
          *      1. it will pull the events from the Queue for a certain time bin
@@ -27,7 +29,7 @@ public class Main {
          *      2. The EventManager can be an Actor that will receive the PhysSimTimeSyncEvent message
          *          and then start the processing of a specific set of events from the EventsQueue
          */
-        EventGenerator eg = new EventGenerator();
+        RandomEventGenerator eg = new RandomEventGenerator();
         eg.generateEvents();
 
         ActorSystem system = ActorSystem.create("akkaeventsim");

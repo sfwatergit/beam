@@ -1,6 +1,6 @@
 package beam.playground.jdeqsimPerformance;
 
-import beam.playground.jdeqsimPerformance.akkaeventsim.PhysSimTimeSyncEvent;
+import beam.playground.jdeqsimPerformance.akkaeventsim.events.PhysSimTimeSyncEvent;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.LinkEnterEvent;

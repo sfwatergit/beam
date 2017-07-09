@@ -1,4 +1,4 @@
-package beam.playground.jdeqsimPerformance.akkaeventsim;
+package beam.playground.jdeqsimPerformance.akkaeventsim.util;
 
 import org.matsim.api.core.v01.events.Event;
 

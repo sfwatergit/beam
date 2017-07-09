@@ -1,5 +1,6 @@
-package beam.playground.jdeqsimPerformance.akkaeventsim;
+package beam.playground.jdeqsimPerformance.akkaeventsim.generators;
 
+import beam.playground.jdeqsimPerformance.akkaeventsim.util.EventTimeComparator;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
@@ -14,7 +15,7 @@ import java.util.stream.Collectors;
 /**
  * Created by asif on 6/17/2017.
  */
-public class EventGenerator {
+public class RandomEventGenerator {
 
 
     int noOfEventsGenerated = 100;
@@ -29,7 +30,7 @@ public class EventGenerator {
     int noOfVehicles = 100;
     int noOfLinks = 100;
 
-    List<Event> allGeneratedEvents = new ArrayList<>();
+    public List<Event> allGeneratedEvents = new ArrayList<>();
 
     public Event generateEvent(){
 
@@ -123,7 +124,7 @@ public class EventGenerator {
 
     public static void main(String args[]){
 
-        EventGenerator eventGenerator = new EventGenerator();
+        RandomEventGenerator eventGenerator = new RandomEventGenerator();
         eventGenerator.generateEvents();
         eventGenerator.printAllGeneratedEvents();
 

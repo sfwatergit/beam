@@ -2,7 +2,7 @@ package beam.playground.jdeqsimPerformance.simpleeventsim;
 
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
-import beam.playground.jdeqsimPerformance.akkaeventsim.EventTimeComparator;
+import beam.playground.jdeqsimPerformance.akkaeventsim.util.EventTimeComparator;
 import org.matsim.api.core.v01.events.Event;
 
 import java.util.*;
@@ -49,7 +49,7 @@ public class ConsumerActor extends UntypedActor{
             }
             eventReceived = (Event)message;
             //eventQueue.add(eventReceived);
-            //eventList.add(eventReceived);
+            eventList.add(eventReceived);
             //eventLinkedList.add(eventReceived);
             noOfEventsReceived++;
             lastEventReceiptTime = System.currentTimeMillis();
@@ -68,7 +68,7 @@ public class ConsumerActor extends UntypedActor{
 
             if(noOfEventsReceived == 0){
                 firstEventReceivedTime = System.currentTimeMillis();
-                System.out.println(getSelf().path().toString() + " -> First Event Received at " + firstEventReceivedTime);
+                //System.out.println(getSelf().path().toString() + " -> First Event Received at " + firstEventReceivedTime);
             }
             List<Event> eventsReceived = (List<Event>)message;
             noOfEventsReceived += eventsReceived.size();
@@ -76,7 +76,7 @@ public class ConsumerActor extends UntypedActor{
 
             if(noOfEventsReceived == 10000000){
 
-                System.out.println(getSelf().path().toString() + " -> Last Event Received at " + lastEventReceiptTime + ", noOfEventsReceived: " + noOfEventsReceived);
+                //System.out.println(getSelf().path().toString() + " -> Last Event Received at " + lastEventReceiptTime + ", noOfEventsReceived: " + noOfEventsReceived);
 
             }
 

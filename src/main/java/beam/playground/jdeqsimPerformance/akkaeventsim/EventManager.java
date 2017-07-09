@@ -1,6 +1,8 @@
 package beam.playground.jdeqsimPerformance.akkaeventsim;
 
 import akka.actor.UntypedActor;
+import beam.playground.jdeqsimPerformance.akkaeventsim.util.EventTimeComparator;
+import beam.playground.jdeqsimPerformance.akkaeventsim.events.PhysSimTimeSyncEvent;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.core.events.handler.EventHandler;
 

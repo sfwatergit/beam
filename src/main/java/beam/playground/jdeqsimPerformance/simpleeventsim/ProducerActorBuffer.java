@@ -55,7 +55,7 @@ public class ProducerActorBuffer extends UntypedActor{
 
 
             if(events.size() == bufferSize) {
-                consumer.tell(events, getSelf());
+                consumer.tell(new ArrayList<>(events), getSelf());
                 sentEvents += events.size();
                 events.clear();
             }
