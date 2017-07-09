@@ -4,15 +4,8 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import beam.playground.jdeqsimPerformance.akkaeventsim.generators.RealTimeEventGenerator;
-import beam.playground.jdeqsimPerformance.akkaeventsim.subscribers.CountLinkEventSubscriber;
-import beam.playground.jdeqsimPerformance.akkaeventsim.subscribers.EnterLinkEventSubscriber;
-import beam.playground.jdeqsimPerformance.akkaeventsim.subscribers.LeaveLinkEventSubscriber;
-import beam.playground.jdeqsimPerformance.akkaeventsim.subscribers.SubscribeMessage;
-import org.matsim.api.core.v01.events.LinkEnterEvent;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import beam.playground.jdeqsimPerformance.akkaeventsim.handlers.LinkEnterEventHandlerImpl;
+import org.matsim.api.core.v01.events.handler.LinkEnterEventHandler;
 
 /**
  * Created by asif on 6/17/2017.
@@ -45,25 +38,16 @@ public class Main {
         ActorRef eventGeneratorActor = system.actorOf(Props.create(RealTimeEventGenerator.class, eventBufferActor), "EventGeneratorActor_RT");
         eventGeneratorActor.tell("START", ActorRef.noSender());
 
-        // Adding the Subscribers to the EventManagerActor
-        ActorRef enterLinkEventSubscriber = system.actorOf(Props.create(EnterLinkEventSubscriber.class), "EnterLinkEventSubscriber");
-        ActorRef leaveLinkEventSubscriber = system.actorOf(Props.create(LeaveLinkEventSubscriber.class), "LeaveLinkEventSubscriber");
-        ActorRef countLinkEventSubscriber = system.actorOf(Props.create(CountLinkEventSubscriber.class), "CountLinkEventSubscriber");
 
+        LinkEnterEventHandler handler = new LinkEnterEventHandlerImpl();
+        EventManagerActor.addHandler(handler);
 
-        List<ActorRef> actorRefs = new ArrayList<>();
-        List<String> eventTypes = new ArrayList<>();
-        actorRefs.add(enterLinkEventSubscriber);
-        eventTypes.add(LinkEnterEvent.EVENT_TYPE);
-        SubscribeMessage subscribeMessage = new SubscribeMessage(actorRefs, eventTypes);
-        eventManagerActor.tell(subscribeMessage, ActorRef.noSender());
-
-
-        actorRefs = Arrays.asList(countLinkEventSubscriber);
-        eventTypes = Arrays.asList("ALL");
-        subscribeMessage = new SubscribeMessage(actorRefs, eventTypes);
-        eventManagerActor.tell(subscribeMessage, ActorRef.noSender());
-
+        /*
+        Here eventManagerActor.getHandler(handlerName) from the EventSubscriber
+        and this should give back the eventHandler and then we will cast it to the specific handler
+        at anytime we can retrieve the state of the event handler
+        if we have the name of the event handler we must be able to retrieve the state at any point in the system.
+         */
 
         eventGeneratorActor.tell("GENERATE_EVENTS", ActorRef.noSender());
     }

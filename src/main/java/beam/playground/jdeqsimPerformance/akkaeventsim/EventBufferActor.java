@@ -89,6 +89,8 @@ public class EventBufferActor extends UntypedActor {
 
     public void handlePhysSimTimeSyncEvent(Object message){
 
+        updateStatistics(1);
+
         physSimTimeSyncEvent = (PhysSimTimeSyncEvent)message;
         List<Event> events = getEvents(physSimTimeSyncEvent.getTime());
 
