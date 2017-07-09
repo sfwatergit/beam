@@ -1,11 +1,9 @@
 package beam.playground.jdeqsimPerformance.akkaeventsim.generators;
 
 import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Props;
-import beam.playground.jdeqsimPerformance.akkaeventsim.EventBufferActor;
-import beam.playground.jdeqsimPerformance.akkaeventsim.EventManagerActor;
+import akka.actor.UntypedActor;
 import beam.playground.jdeqsimPerformance.akkaeventsim.events.PhysSimTimeSyncEvent;
+import beam.playground.jdeqsimPerformance.simpleeventsim.Util;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
@@ -19,9 +17,9 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * Created by asif on 6/17/2017.
  */
-public class RealTimeEventGenerator {
+public class RealTimeEventGenerator extends UntypedActor{
 
-    int noOfEventsGenerated = 100;
+
     double timeRangeMax = 86400;
     int eventsCount = 0;
     double timeRangeMin = 1;
@@ -34,11 +32,28 @@ public class RealTimeEventGenerator {
     public static final int LINK_LEAVE_EVENT = 2;
     public static final int PHYSSIM_TIME_SYNC_EVENT = 3;
 
+    long startTime = 0;
+    long endTime = 0;
+    long noOfEvents = 10000000;
+
     Random random = new Random();
+    ActorRef eventBufferActor = null;
+
+    RealTimeEventGenerator(ActorRef eventBufferActor){
+
+        this.eventBufferActor = eventBufferActor;
+    }
+
+    RealTimeEventGenerator(ActorRef eventBufferActor, long noOfEvents){
+
+        this.eventBufferActor = eventBufferActor;
+        this.noOfEvents = noOfEvents;
+    }
 
     public Event generatePhysSimTimeSyncEvent(){
 
-        double eventTime = getRandomEventTime();
+        //double eventTime = getRandomEventTime();
+        double eventTime = (double)System.currentTimeMillis();
         Event event = new PhysSimTimeSyncEvent(eventTime);
         timeRangeMin = eventTime;
         return event;
@@ -46,7 +61,7 @@ public class RealTimeEventGenerator {
 
     public Event generateEvent() {
 
-        double eventTime = getRandomEventTime();
+        double eventTime = (double)System.currentTimeMillis();
         int eventType = getRandomEventType();
         Id<Vehicle> vehicleId = getRandomVehicleId();
         Id<Link> linkId = getRandomLinkId();
@@ -120,68 +135,35 @@ public class RealTimeEventGenerator {
         return ThreadLocalRandom.current().nextInt(min, max + 1);
     }
 
+    private void generateEvents(){
+        long _startTime = System.currentTimeMillis();
+        startTime = _startTime;
 
-
-
-    public static void main(String args[]){
-
-        ActorSystem system = ActorSystem.create("akkaeventsim");
-        ActorRef eventManagerActor = system.actorOf(Props.create(EventManagerActor.class), "EVENT_MANAGER");
-        ActorRef eventBufferActor = system.actorOf(Props.create(EventBufferActor.class), "EVENT_BUFFER");
-
-
-
-        RealTimeEventGenerator eventGenerator = new RealTimeEventGenerator();
-        long startTime = System.currentTimeMillis();
-        long noOfEvents = 10000000;
-
-        int j = 0;
         for(int i = 0; i < noOfEvents; i++){
 
-
-            //System.out.println("Generated Event -> " + event);
-
-            //System.out.println(event.toString());
-
-            /*if(i % 1000000 == 0){
-                System.out.println(System.currentTimeMillis());
-            }*/
             long currentTime = System.currentTimeMillis();
             if(currentTime - startTime > 1000){
-
-                Event event = eventGenerator.generatePhysSimTimeSyncEvent();
+                Event event = generatePhysSimTimeSyncEvent();
                 eventBufferActor.tell(event, ActorRef.noSender());
-
-                System.out.println("P -> Event -> " + event);
-
-                System.out.println("Event Generated for this PhyssimTimeSync event " + j);
                 startTime = currentTime;
-                j = 0;
             }else{
-                Event event = eventGenerator.generateEvent();
+                Event event = generateEvent();
                 eventBufferActor.tell(event, ActorRef.noSender());
-                j++;
-                //System.out.println("Event -> " + event);
             }
         }
+        endTime = System.currentTimeMillis();
+        Util.calculateRateOfEventsReceived(getSelf().path().toString(), _startTime, endTime, noOfEvents);
+    }
 
+    @Override
+    public void onReceive(Object message) throws Throwable {
 
-        Event event = null;
-        do {
-            event = eventGenerator.generatePhysSimTimeSyncEvent();
-            eventBufferActor.tell(event, ActorRef.noSender());
-        }while (eventGenerator.maxEventTimeReached > event.getTime());
-
-        long endTime = System.currentTimeMillis();
-        long timeDuration = endTime - startTime;
-
-        System.out.println("Start " + startTime);
-        System.out.println("End " + endTime);
-        System.out.println(noOfEvents/timeDuration);
-
-
-        eventBufferActor.tell("SIM_COMPLETED", ActorRef.noSender());
-        //system.actorSelection("/user/*").tell("SIM_COMPLETED", ActorRef.noSender());
-
+        if(message instanceof String){
+            if(((String) message).equalsIgnoreCase("GENERATE_EVENTS")){
+                eventBufferActor.tell("START", getSelf());
+                generateEvents();
+                eventBufferActor.tell("END", getSelf());
+            }
+        }
     }
 }

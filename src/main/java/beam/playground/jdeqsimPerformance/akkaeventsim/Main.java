@@ -3,10 +3,7 @@ package beam.playground.jdeqsimPerformance.akkaeventsim;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
-import beam.playground.jdeqsimPerformance.akkaeventsim.generators.RandomEventGenerator;
-import beam.playground.jdeqsimPerformance.akkaeventsim.events.PhysSimTimeSyncEvent;
-
-import java.util.Calendar;
+import beam.playground.jdeqsimPerformance.akkaeventsim.generators.RealTimeEventGenerator;
 
 /**
  * Created by asif on 6/17/2017.
@@ -29,23 +26,14 @@ public class Main {
          *      2. The EventManager can be an Actor that will receive the PhysSimTimeSyncEvent message
          *          and then start the processing of a specific set of events from the EventsQueue
          */
-        RandomEventGenerator eg = new RandomEventGenerator();
-        eg.generateEvents();
+
+        //RandomEventGenerator eg = new RandomEventGenerator();
+        //eg.generateEvents();
 
         ActorSystem system = ActorSystem.create("akkaeventsim");
-        ActorRef eventManagerActor = system.actorOf(Props.create(EventManager.class, eg.allGeneratedEvents), "EVENT_MANAGER");
+        ActorRef eventBufferActor = system.actorOf(Props.create(EventBufferActor.class), "EventBufferActor");
+        ActorRef eventGeneratorActor = system.actorOf(Props.create(RealTimeEventGenerator.class, eventBufferActor), "EventGeneratorActor_RT");
 
-        PhysSimTimeSyncEvent signal = new PhysSimTimeSyncEvent(Calendar.getInstance().getTimeInMillis());
-
-        eventManagerActor.tell(signal, ActorRef.noSender());
-        eventManagerActor.tell(signal, ActorRef.noSender());
-        eventManagerActor.tell(signal, ActorRef.noSender());
-        eventManagerActor.tell(signal, ActorRef.noSender());
-        eventManagerActor.tell(signal, ActorRef.noSender());
-        eventManagerActor.tell(signal, ActorRef.noSender());
-        eventManagerActor.tell(signal, ActorRef.noSender());
-        eventManagerActor.tell(signal, ActorRef.noSender());
-        eventManagerActor.tell(signal, ActorRef.noSender());
-        eventManagerActor.tell(signal, ActorRef.noSender());
+        eventGeneratorActor.tell("START", ActorRef.noSender());
     }
 }
