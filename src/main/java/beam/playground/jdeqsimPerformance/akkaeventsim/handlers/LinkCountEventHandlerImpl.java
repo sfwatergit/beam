@@ -1,13 +1,13 @@
 package beam.playground.jdeqsimPerformance.akkaeventsim.handlers;
 
-import org.matsim.api.core.v01.events.LinkEnterEvent;
+import org.matsim.api.core.v01.events.Event;
 
-public class LinkEnterEventHandlerImpl implements LinkEnterEventHandlerI {
+public class LinkCountEventHandlerImpl implements LinkCountEventHandlerI {
 
 
 	int count = 0;
 
-	public LinkEnterEventHandlerImpl(){
+	public LinkCountEventHandlerImpl(){
 
 	}
 
@@ -17,7 +17,7 @@ public class LinkEnterEventHandlerImpl implements LinkEnterEventHandlerI {
 	}
 
 	@Override
-	public void handleEvent(LinkEnterEvent event) {
+	public void handleEvent(Event event) {
 		count++;
 		//System.out.println("Got the event " + event.toString());
 	}
@@ -25,6 +25,8 @@ public class LinkEnterEventHandlerImpl implements LinkEnterEventHandlerI {
 	public int getCount(){
 		return count;
 	}
+
+
 
 }
 

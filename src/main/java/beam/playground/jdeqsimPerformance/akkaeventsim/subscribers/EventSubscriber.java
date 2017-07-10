@@ -1,6 +1,7 @@
 package beam.playground.jdeqsimPerformance.akkaeventsim.subscribers;
 
 import akka.actor.UntypedActor;
+import beam.playground.jdeqsimPerformance.akkaeventsim.handlers.LinkCountEventHandlerI;
 import beam.playground.jdeqsimPerformance.simpleeventsim.Util;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
@@ -32,23 +33,43 @@ public class EventSubscriber extends UntypedActor implements ISubscriber{
     public void onReceive(Object message) throws Throwable {
 
         if(message instanceof Event){
-            updateStatistics(1);
 
-            Event event = (Event)message;
-
-            if(event.getEventType().equalsIgnoreCase(LinkEnterEvent.EVENT_TYPE)){
-                LinkEnterEvent linkEnterEvent = (LinkEnterEvent)event;
-                LinkEnterEventHandler handler = (LinkEnterEventHandler)eventHandler;
-                handler.handleEvent(linkEnterEvent);
-            }
-
+            handleEvent(message);
             //System.out.println("Event Received [" + event + "]");
         }else if(message instanceof String){
-            if(((String) message).equalsIgnoreCase("END")){
+            handleMessage(message);
+        }
+    }
 
-                Util.calculateRateOfEventsReceived(getSelf().path().toString(), firstEventReceivedTime, lastEventReceiptTime, noOfEventsReceived);
-            }
-            //getSender().tell();
+    public void handleEvent(Object message){
+        updateStatistics(1);
+
+        Event event = (Event)message;
+
+        if(event.getEventType().equalsIgnoreCase(LinkEnterEvent.EVENT_TYPE)){
+            LinkEnterEvent linkEnterEvent = (LinkEnterEvent)event;
+            LinkEnterEventHandler handler = (LinkEnterEventHandler)eventHandler;
+            handler.handleEvent(linkEnterEvent);
+        }
+
+        if(eventHandler instanceof LinkCountEventHandlerI){
+
+            LinkCountEventHandlerI handler = (LinkCountEventHandlerI) eventHandler;
+            handler.handleEvent(event);
+        }
+    }
+
+    public void handleMessage(Object message){
+
+        String msg = (String) message;
+        if(msg.equalsIgnoreCase("END")){
+
+            Util.calculateRateOfEventsReceived(getSelf().path().toString(), firstEventReceivedTime, lastEventReceiptTime, noOfEventsReceived);
+        }else if(msg.equalsIgnoreCase("GET_HANDLER")){
+
+            getSender().tell(eventHandler, getSelf());
+        }else if(msg.equalsIgnoreCase("IS_COMPLETED")){
+            getSender().tell("TRUE", getSelf());
         }
     }
 

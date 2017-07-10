@@ -158,11 +158,15 @@ public class RealTimeEventGenerator extends UntypedActor{
     @Override
     public void onReceive(Object message) throws Throwable {
 
+
         if(message instanceof String){
-            if(((String) message).equalsIgnoreCase("GENERATE_EVENTS")){
+
+            String msg = (String)message;
+            if(msg.equalsIgnoreCase("GENERATE_EVENTS")){
                 eventBufferActor.tell("START", getSelf());
                 generateEvents();
                 eventBufferActor.tell("END", getSelf());
+                getSelf().tell("SHOW_COUNT", getSelf());
             }
         }
     }

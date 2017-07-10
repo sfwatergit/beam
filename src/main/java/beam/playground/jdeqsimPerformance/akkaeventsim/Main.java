@@ -4,8 +4,8 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import beam.playground.jdeqsimPerformance.akkaeventsim.generators.RealTimeEventGenerator;
+import beam.playground.jdeqsimPerformance.akkaeventsim.handlers.LinkEnterEventHandlerI;
 import beam.playground.jdeqsimPerformance.akkaeventsim.handlers.LinkEnterEventHandlerImpl;
-import org.matsim.api.core.v01.events.handler.LinkEnterEventHandler;
 
 /**
  * Created by asif on 6/17/2017.
@@ -36,11 +36,14 @@ public class Main {
         ActorRef eventManagerActor = system.actorOf(Props.create(EventManagerActor.class), "EventManagerActor");
         ActorRef eventBufferActor = system.actorOf(Props.create(EventBufferActor.class, eventManagerActor), "EventBufferActor");
         ActorRef eventGeneratorActor = system.actorOf(Props.create(RealTimeEventGenerator.class, eventBufferActor), "EventGeneratorActor_RT");
-        eventGeneratorActor.tell("START", ActorRef.noSender());
+        //eventGeneratorActor.tell("START", ActorRef.noSender());
 
 
-        LinkEnterEventHandler handler = new LinkEnterEventHandlerImpl();
-        EventManagerActor.addHandler(handler);
+        LinkEnterEventHandlerI handler = new LinkEnterEventHandlerImpl();
+
+        String handlerName = "testHandler";
+        EventManagerActor.addHandler(handler, handlerName);
+
 
         /*
         Here eventManagerActor.getHandler(handlerName) from the EventSubscriber
@@ -50,5 +53,26 @@ public class Main {
          */
 
         eventGeneratorActor.tell("GENERATE_EVENTS", ActorRef.noSender());
+
+        LinkEnterEventHandlerI _handler1 = (LinkEnterEventHandlerI)EventManagerActor.getEventHandler(handlerName);
+        System.out.println("count -> " + _handler1.getCount());
+
+        int count = 0;
+        int limit = 0;
+        System.out.println("EventManagerActor.isCompleted() -> " + EventManagerActor.isCompleted());
+        while(EventManagerActor.em._isCompleted == false){
+
+            try {
+                Thread.sleep(5000);
+
+                System.out.println("count2 -> " + _handler1.getCount() + " - " + EventManagerActor.em._isCompleted);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        /*
+        Is there a way to shutdown the system in the main.
+         */
     }
 }

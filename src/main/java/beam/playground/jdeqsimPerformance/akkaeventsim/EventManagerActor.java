@@ -3,14 +3,16 @@ package beam.playground.jdeqsimPerformance.akkaeventsim;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
-import beam.playground.jdeqsimPerformance.akkaeventsim.handlers.LinkEnterEventHandlerImpl;
+import akka.pattern.Patterns;
+import akka.util.Timeout;
 import beam.playground.jdeqsimPerformance.akkaeventsim.subscribers.EventSubscriber;
-import beam.playground.jdeqsimPerformance.akkaeventsim.subscribers.SubscribeMessage;
 import beam.playground.jdeqsimPerformance.simpleeventsim.Util;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
 import org.matsim.api.core.v01.events.handler.LinkEnterEventHandler;
 import org.matsim.core.events.handler.EventHandler;
+import scala.concurrent.Await;
+import scala.concurrent.duration.Duration;
 
 import java.util.*;
 
@@ -27,6 +29,8 @@ public class EventManagerActor extends UntypedActor{
     Map<String, List<ActorRef>> eventSubscribers = new HashMap<>();
 
     //List<ActorRef> eventSubscribers = new ArrayList<>();
+    boolean _isCompleted = false;
+    int _subscriberProcessed = 0;
 
     public static EventManagerActor em = null;
 
@@ -54,7 +58,22 @@ public class EventManagerActor extends UntypedActor{
          */
     }
 
-    public static EventHandler getEventHandler(String handlerName){
+    Map<String, ActorRef> handlerActors = new HashMap<>();
+    //Map<String, EventHandler> handlerActors = new HashMap<>();
+
+    public static void addHandler(EventHandler eventHandler, String handlerName){
+        // use the eventmanager reference and
+        // You will just add the it will accept eventHandler,
+        ActorRef actorRef = em.getContext().actorOf(Props.create(EventSubscriber.class, eventHandler), "EventSubscriber" + em.eventSubscribers.size());
+        if(eventHandler instanceof LinkEnterEventHandler) {
+
+            EventManagerActor.addSubscriber2(actorRef, LinkEnterEvent.EVENT_TYPE);
+            em.handlerActors.put(handlerName, actorRef);
+            //em.handlerActors.put(handlerName, eventHandler);
+        }
+    }
+
+    public static EventHandler getEventHandler(String handlerName) {
         /*
         There should be two method, one method will give name to the handler, when we subscribe
         It will give back the handler from the handlers map,
@@ -63,7 +82,16 @@ public class EventManagerActor extends UntypedActor{
         it should call the
          */
 
-        return new LinkEnterEventHandlerImpl(); //placeholder
+        EventHandler handler = null;
+        try {
+            ActorRef subscriberActorRef = em.handlerActors.get(handlerName);
+            Timeout timeout = new Timeout(Duration.create(5, "seconds"));
+            scala.concurrent.Future<Object> future = Patterns.ask(subscriberActorRef, "GET_HANDLER", timeout);
+            handler = (EventHandler) Await.result(future, timeout.duration());
+        }catch(Exception ex){
+            ex.printStackTrace();
+        }
+        return handler;
     }
 
     @Override
@@ -74,9 +102,6 @@ public class EventManagerActor extends UntypedActor{
         }else if(message instanceof String){
 
             handleMessage(message);
-        }else if(message instanceof SubscribeMessage){
-
-            //addSubscriber(message);
         }
     }
 
@@ -125,7 +150,42 @@ public class EventManagerActor extends UntypedActor{
             }
 
             Util.calculateRateOfEventsReceived(getSelf().path().toString(), firstEventReceivedTime, lastEventReceiptTime, noOfEventsReceived);
+
+
+            checkSubscriberCompletion();
         }
+    }
+
+    public static void checkSubscriberCompletion(){
+        int subscriberProcessed = 0;
+        em._subscriberProcessed = 0;
+        for(ActorRef _actorRefs : em.handlerActors.values()){
+
+            try {
+                //_actorRefs.tell("IS_COMPLETED", em.getSelf());
+                Timeout timeout = new Timeout(Duration.create(5, "seconds"));
+                scala.concurrent.Future<Object> future = Patterns.ask(_actorRefs, "IS_COMPLETED", timeout);
+                String isCompleted = (String) Await.result(future, timeout.duration());
+                if (isCompleted.equalsIgnoreCase("TRUE")) {
+                    subscriberProcessed++;
+                }
+                System.out.println(isCompleted + " iscompleted");
+            }catch (Exception ex){
+                ex.printStackTrace();
+            }
+        }
+        em._subscriberProcessed = subscriberProcessed;
+
+        System.out.println("em._subscriberProcessed == em.handlerActors.keySet().size() " + (em._subscriberProcessed == em.handlerActors.keySet().size()));
+        if(em._subscriberProcessed == em.handlerActors.keySet().size()){
+            em._isCompleted = true;
+        }
+    }
+
+
+    public static boolean isCompleted(){
+
+        return em._isCompleted;
     }
 
 
@@ -138,6 +198,7 @@ public class EventManagerActor extends UntypedActor{
         //List<ActorRef> actorRefs = eventSubscribers.get("ALL");
         for(Event event : events){
             List<ActorRef> _actorRefs = eventSubscribers.get(event.getEventType());
+
 
             if(_actorRefs != null) {
                 for (ActorRef subscriberActor : eventSubscribers.get(event.getEventType())) {
