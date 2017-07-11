@@ -80,5 +80,6 @@ public class Main {
         /*
         Is there a way to shutdown the system in the main.
          */
+        system.terminate();
     }
 }
