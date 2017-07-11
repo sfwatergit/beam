@@ -61,7 +61,7 @@ public class Main {
         eventGeneratorActor.tell("GENERATE_EVENTS", ActorRef.noSender());
 
 
-        System.out.println("EventManagerActor.isCompleted() -> " + EventManagerActor.isCompleted());
+        //System.out.println("EventManagerActor.isCompleted() -> " + EventManagerActor.isCompleted());
         while(EventManagerActor.em._isCompleted == false){
 
             try {

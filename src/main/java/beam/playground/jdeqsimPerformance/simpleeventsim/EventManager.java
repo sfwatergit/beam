@@ -1,4 +1,4 @@
-package beam.playground.jdeqsimPerformance.akkaeventsim;
+package beam.playground.jdeqsimPerformance.simpleeventsim;
 
 import akka.actor.UntypedActor;
 import beam.playground.jdeqsimPerformance.akkaeventsim.util.EventTimeComparator;

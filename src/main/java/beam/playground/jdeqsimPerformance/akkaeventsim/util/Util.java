@@ -1,4 +1,6 @@
-package beam.playground.jdeqsimPerformance.simpleeventsim;
+package beam.playground.jdeqsimPerformance.akkaeventsim.util;
+
+import beam.playground.jdeqsimPerformance.simpleeventsim.SimulationTimes;
 
 /**
  * Created by asif on 7/7/2017.

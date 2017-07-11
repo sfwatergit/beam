@@ -7,7 +7,7 @@ import akka.pattern.Patterns;
 import akka.util.Timeout;
 import beam.playground.jdeqsimPerformance.akkaeventsim.handlers.LinkCountEventHandlerI;
 import beam.playground.jdeqsimPerformance.akkaeventsim.subscribers.EventSubscriber;
-import beam.playground.jdeqsimPerformance.simpleeventsim.Util;
+import beam.playground.jdeqsimPerformance.akkaeventsim.util.Util;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
 import org.matsim.api.core.v01.events.LinkLeaveEvent;
@@ -188,7 +188,7 @@ public class EventManagerActor extends UntypedActor{
         }
         em._subscriberProcessed = subscriberProcessed;
 
-        System.out.println("em._subscriberProcessed == em.handlerActors.keySet().size() " + (em._subscriberProcessed == em.handlerActors.keySet().size()));
+        //System.out.println("em._subscriberProcessed == em.handlerActors.keySet().size() " + (em._subscriberProcessed == em.handlerActors.keySet().size()));
         if(em._subscriberProcessed == em.handlerActors.keySet().size()){
             em._isCompleted = true;
         }

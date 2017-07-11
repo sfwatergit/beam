@@ -2,7 +2,7 @@ package beam.playground.jdeqsimPerformance.akkaeventsim.subscribers;
 
 import akka.actor.UntypedActor;
 import beam.playground.jdeqsimPerformance.akkaeventsim.handlers.LinkCountEventHandlerI;
-import beam.playground.jdeqsimPerformance.simpleeventsim.Util;
+import beam.playground.jdeqsimPerformance.akkaeventsim.util.Util;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
 import org.matsim.api.core.v01.events.LinkLeaveEvent;
@@ -13,7 +13,7 @@ import org.matsim.core.events.handler.EventHandler;
 /**
  * Created by asif on 7/9/2017.
  */
-public class EventSubscriber extends UntypedActor implements ISubscriber{
+public class EventSubscriber extends UntypedActor {
     /** PERFORMANCE NUMBERS */
     long noOfEventsReceived = 0;
     long firstEventReceivedTime = 0;

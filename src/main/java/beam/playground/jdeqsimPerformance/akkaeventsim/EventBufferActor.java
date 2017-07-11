@@ -5,8 +5,7 @@ import akka.actor.UntypedActor;
 import beam.playground.exceptions.InvalidEventTime;
 import beam.playground.jdeqsimPerformance.akkaeventsim.events.PhysSimTimeSyncEvent;
 import beam.playground.jdeqsimPerformance.akkaeventsim.util.EventTimeComparator;
-import beam.playground.jdeqsimPerformance.simpleeventsim.SimulationTimes;
-import beam.playground.jdeqsimPerformance.simpleeventsim.Util;
+import beam.playground.jdeqsimPerformance.akkaeventsim.util.Util;
 import org.matsim.api.core.v01.events.Event;
 
 import java.util.*;
@@ -67,26 +66,13 @@ public class EventBufferActor extends UntypedActor {
         }else if(message instanceof List){
 
             handleEventList(message);
-        }else if(message instanceof SimulationTimes){
-
-            handleSimulationTimesMessage(message);
-
         }else if(message instanceof String){
 
             handleMessage(message);
         }
     }
 
-    public void handleSimulationTimesMessage(Object message){
-        simulationCompletedFlag = true;
-        SimulationTimes simulationTimes = (SimulationTimes)message;
 
-        System.out.println(getSelf().toString() + ", First Event Received at " + firstEventReceivedTime +
-                ", Last Event Recived at " + lastEventReceiptTime +
-                ", No Of Events " + noOfEventsReceived);
-        Util.calculateRateOfEventsReceived(getSelf().path().toString(), firstEventReceivedTime, lastEventReceiptTime, noOfEventsReceived);
-
-    }
 
     public void handlePhysSimTimeSyncEvent(Object message){
 
@@ -150,8 +136,7 @@ public class EventBufferActor extends UntypedActor {
             endMessageCount++;
             if (endMessageCount == startMessageCount) {
 
-                System.out.println("Remaining Queue size -> " + eventQueue.size());
-                System.out.println("PhysSimTimeSyncEvent -> " + physSimTimeSyncEventCount);
+                System.out.println(getSelf() + " -> Remaining Queue size -> " + eventQueue.size() + ", No of PhysSimTimeSyncEvent Received -> " + physSimTimeSyncEventCount);
 
                 if(!eventQueue.isEmpty()) {
                     List<Event> events = getEvents(System.currentTimeMillis());

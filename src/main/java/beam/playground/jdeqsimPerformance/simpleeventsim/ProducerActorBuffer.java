@@ -70,7 +70,7 @@ public class ProducerActorBuffer extends UntypedActor{
         }
         //System.out.println("Total Events sent " + sentEvents);
 
-        //SimulationTimes simulationTimes = new SimulationTimes(_startTime, endTime, noOfEvents);
+
 
 
         Util.calculateRateOfEventsReceived(getSelf().path().toString(), _startTime, endTime, noOfEvents);

@@ -3,7 +3,7 @@ package beam.playground.jdeqsimPerformance.akkaeventsim.generators;
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
 import beam.playground.jdeqsimPerformance.akkaeventsim.events.PhysSimTimeSyncEvent;
-import beam.playground.jdeqsimPerformance.simpleeventsim.Util;
+import beam.playground.jdeqsimPerformance.akkaeventsim.util.Util;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
