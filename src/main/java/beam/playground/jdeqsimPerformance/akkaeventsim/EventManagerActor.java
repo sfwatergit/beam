@@ -5,11 +5,14 @@ import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.pattern.Patterns;
 import akka.util.Timeout;
+import beam.playground.jdeqsimPerformance.akkaeventsim.handlers.LinkCountEventHandlerI;
 import beam.playground.jdeqsimPerformance.akkaeventsim.subscribers.EventSubscriber;
 import beam.playground.jdeqsimPerformance.simpleeventsim.Util;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
+import org.matsim.api.core.v01.events.LinkLeaveEvent;
 import org.matsim.api.core.v01.events.handler.LinkEnterEventHandler;
+import org.matsim.api.core.v01.events.handler.LinkLeaveEventHandler;
 import org.matsim.core.events.handler.EventHandler;
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
@@ -46,16 +49,19 @@ public class EventManagerActor extends UntypedActor{
     public static void addHandler(EventHandler eventHandler){
         // use the eventmanager reference and
         // You will just add the it will accept eventHandler,
-        ActorRef actorRef = em.getContext().actorOf(Props.create(EventSubscriber.class, eventHandler), "EventSubscriber" + em.eventSubscribers.size());
-        if(eventHandler instanceof LinkEnterEventHandler) {
-
-            EventManagerActor.addSubscriber2(actorRef, LinkEnterEvent.EVENT_TYPE);
-        }
-
         // An other method, with a second argument, with a name for the handler, it will store, store the handler with the name in a map
         /*
         when we call the method with getHandler with the name argument.
          */
+
+        ActorRef actorRef = em.getContext().actorOf(Props.create(EventSubscriber.class, eventHandler), "EventSubscriber" + em.eventSubscribers.size());
+        if(eventHandler instanceof LinkEnterEventHandler) {
+
+            EventManagerActor.addSubscriber2(actorRef, LinkEnterEvent.EVENT_TYPE);
+        }else if(eventHandler instanceof LinkCountEventHandlerI){
+
+            EventManagerActor.addSubscriber2(actorRef, "ALL_EVENTS");
+        }
     }
 
     Map<String, ActorRef> handlerActors = new HashMap<>();
@@ -64,12 +70,18 @@ public class EventManagerActor extends UntypedActor{
     public static void addHandler(EventHandler eventHandler, String handlerName){
         // use the eventmanager reference and
         // You will just add the it will accept eventHandler,
-        ActorRef actorRef = em.getContext().actorOf(Props.create(EventSubscriber.class, eventHandler), "EventSubscriber" + em.eventSubscribers.size());
+        ActorRef actorRef = em.getContext().actorOf(Props.create(EventSubscriber.class, eventHandler), handlerName);
+        em.handlerActors.put(handlerName, actorRef);
+
         if(eventHandler instanceof LinkEnterEventHandler) {
 
             EventManagerActor.addSubscriber2(actorRef, LinkEnterEvent.EVENT_TYPE);
-            em.handlerActors.put(handlerName, actorRef);
-            //em.handlerActors.put(handlerName, eventHandler);
+        }else if(eventHandler instanceof LinkLeaveEventHandler) {
+
+            EventManagerActor.addSubscriber2(actorRef, LinkLeaveEvent.EVENT_TYPE);
+        }else if(eventHandler instanceof LinkCountEventHandlerI){
+
+            EventManagerActor.addSubscriber2(actorRef, "ALL_EVENTS");
         }
     }
 
@@ -169,7 +181,7 @@ public class EventManagerActor extends UntypedActor{
                 if (isCompleted.equalsIgnoreCase("TRUE")) {
                     subscriberProcessed++;
                 }
-                System.out.println(isCompleted + " iscompleted");
+                //System.out.println(isCompleted + " iscompleted");
             }catch (Exception ex){
                 ex.printStackTrace();
             }
@@ -199,9 +211,19 @@ public class EventManagerActor extends UntypedActor{
         for(Event event : events){
             List<ActorRef> _actorRefs = eventSubscribers.get(event.getEventType());
 
+            if(_actorRefs != null) {
+                for (ActorRef subscriberActor : _actorRefs) {
+                    subscriberActor.tell(event, getSelf());
+                }
+            }
+        }
+
+
+        List<ActorRef> _actorRefs = eventSubscribers.get("ALL_EVENTS");
+        for(Event event : events){
 
             if(_actorRefs != null) {
-                for (ActorRef subscriberActor : eventSubscribers.get(event.getEventType())) {
+                for (ActorRef subscriberActor : _actorRefs) {
                     subscriberActor.tell(event, getSelf());
                 }
             }

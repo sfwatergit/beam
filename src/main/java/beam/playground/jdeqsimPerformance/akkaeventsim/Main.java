@@ -4,8 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import beam.playground.jdeqsimPerformance.akkaeventsim.generators.RealTimeEventGenerator;
-import beam.playground.jdeqsimPerformance.akkaeventsim.handlers.LinkEnterEventHandlerI;
-import beam.playground.jdeqsimPerformance.akkaeventsim.handlers.LinkEnterEventHandlerImpl;
+import beam.playground.jdeqsimPerformance.akkaeventsim.handlers.*;
 
 /**
  * Created by asif on 6/17/2017.
@@ -39,12 +38,6 @@ public class Main {
         //eventGeneratorActor.tell("START", ActorRef.noSender());
 
 
-        LinkEnterEventHandlerI handler = new LinkEnterEventHandlerImpl();
-
-        String handlerName = "testHandler";
-        EventManagerActor.addHandler(handler, handlerName);
-
-
         /*
         Here eventManagerActor.getHandler(handlerName) from the EventSubscriber
         and this should give back the eventHandler and then we will cast it to the specific handler
@@ -52,25 +45,38 @@ public class Main {
         if we have the name of the event handler we must be able to retrieve the state at any point in the system.
          */
 
+
+        String handlerName = "LinkEnterEventHandler";
+        LinkEnterEventHandlerI handler = new LinkEnterEventHandlerImpl();
+        EventManagerActor.addHandler(handler, handlerName);
+
+        String handlerName2 = "LinkCountEventHandler";
+        LinkCountEventHandlerI handler2 = new LinkCountEventHandlerImpl();
+        EventManagerActor.addHandler(handler2, handlerName2);
+
+        String handlerName3 = "LinkLeaveEventHandler";
+        LinkLeaveEventHandlerI handler3 = new LinkLeaveEventHandlerImpl();
+        EventManagerActor.addHandler(handler3, handlerName3);
+
         eventGeneratorActor.tell("GENERATE_EVENTS", ActorRef.noSender());
 
-        LinkEnterEventHandlerI _handler1 = (LinkEnterEventHandlerI)EventManagerActor.getEventHandler(handlerName);
-        System.out.println("count -> " + _handler1.getCount());
 
-        int count = 0;
-        int limit = 0;
         System.out.println("EventManagerActor.isCompleted() -> " + EventManagerActor.isCompleted());
         while(EventManagerActor.em._isCompleted == false){
 
             try {
                 Thread.sleep(5000);
-
-                System.out.println("count2 -> " + _handler1.getCount() + " - " + EventManagerActor.em._isCompleted);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
 
+        LinkEnterEventHandlerI _handler = (LinkEnterEventHandlerI)EventManagerActor.getEventHandler(handlerName);
+        LinkCountEventHandlerI _handler2 = (LinkCountEventHandlerI)EventManagerActor.getEventHandler(handlerName2);
+        LinkLeaveEventHandlerI _handler3 = (LinkLeaveEventHandlerI)EventManagerActor.getEventHandler(handlerName3);
+        System.out.println(handlerName + " -> count -> " + _handler.getCount());
+        System.out.println(handlerName2 + " -> count -> " + _handler2.getCount());
+        System.out.println(handlerName3 + " -> count -> " + _handler3.getCount());
         /*
         Is there a way to shutdown the system in the main.
          */

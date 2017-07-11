@@ -5,7 +5,9 @@ import beam.playground.jdeqsimPerformance.akkaeventsim.handlers.LinkCountEventHa
 import beam.playground.jdeqsimPerformance.simpleeventsim.Util;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
+import org.matsim.api.core.v01.events.LinkLeaveEvent;
 import org.matsim.api.core.v01.events.handler.LinkEnterEventHandler;
+import org.matsim.api.core.v01.events.handler.LinkLeaveEventHandler;
 import org.matsim.core.events.handler.EventHandler;
 
 /**
@@ -46,10 +48,14 @@ public class EventSubscriber extends UntypedActor implements ISubscriber{
 
         Event event = (Event)message;
 
-        if(event.getEventType().equalsIgnoreCase(LinkEnterEvent.EVENT_TYPE)){
+        if(eventHandler instanceof LinkEnterEventHandler && event.getEventType().equalsIgnoreCase(LinkEnterEvent.EVENT_TYPE)){
             LinkEnterEvent linkEnterEvent = (LinkEnterEvent)event;
             LinkEnterEventHandler handler = (LinkEnterEventHandler)eventHandler;
             handler.handleEvent(linkEnterEvent);
+        }else if(eventHandler instanceof LinkLeaveEventHandler && event.getEventType().equalsIgnoreCase(LinkLeaveEvent.EVENT_TYPE)){
+            LinkLeaveEvent linkLeaveEvent = (LinkLeaveEvent)event;
+            LinkLeaveEventHandler handler = (LinkLeaveEventHandler)eventHandler;
+            handler.handleEvent(linkLeaveEvent);
         }
 
         if(eventHandler instanceof LinkCountEventHandlerI){

@@ -23,6 +23,7 @@ public class EventBufferActor extends UntypedActor {
     long lastEventReceiptTime = 0;
     long firstEventReceivedTime = 0;
     boolean simulationCompletedFlag = false;
+    int physSimTimeSyncEventCount = 0;
 
     PhysSimTimeSyncEvent physSimTimeSyncEvent = null;
     Event eventReceived = null;
@@ -89,13 +90,14 @@ public class EventBufferActor extends UntypedActor {
 
     public void handlePhysSimTimeSyncEvent(Object message){
 
+        physSimTimeSyncEventCount++;
         updateStatistics(1);
 
         physSimTimeSyncEvent = (PhysSimTimeSyncEvent)message;
         List<Event> events = getEvents(physSimTimeSyncEvent.getTime());
 
         //getContext().actorSelection("../EVENT_MANAGER").tell(events, getSelf());
-        eventManagerActor.tell(events, getSelf());
+        eventManagerActor.tell(new ArrayList<>(events), getSelf());
     }
 
     public void handleEvent(Object message) throws InvalidEventTime{
@@ -144,8 +146,18 @@ public class EventBufferActor extends UntypedActor {
             startMessageCount++;
 
         }else if(((String) message).equalsIgnoreCase("END")) {
+
             endMessageCount++;
             if (endMessageCount == startMessageCount) {
+
+                System.out.println("Remaining Queue size -> " + eventQueue.size());
+                System.out.println("PhysSimTimeSyncEvent -> " + physSimTimeSyncEventCount);
+
+                if(!eventQueue.isEmpty()) {
+                    List<Event> events = getEvents(System.currentTimeMillis());
+                    eventManagerActor.tell(new ArrayList<>(events), getSelf());
+                }
+
                 Util.calculateRateOfEventsReceived(getSelf().path().toString(), firstEventReceivedTime, lastEventReceiptTime, noOfEventsReceived);
 
                 eventManagerActor.tell("END", getSelf());
