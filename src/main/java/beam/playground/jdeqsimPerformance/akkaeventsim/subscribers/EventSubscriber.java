@@ -1,7 +1,7 @@
 package beam.playground.jdeqsimPerformance.akkaeventsim.subscribers;
 
 import akka.actor.UntypedActor;
-import beam.playground.jdeqsimPerformance.akkaeventsim.handlers.LinkCountEventHandlerI;
+import beam.playground.jdeqsimPerformance.akkaeventsim.events.handlers.LinkCountEventHandler;
 import beam.playground.jdeqsimPerformance.akkaeventsim.util.Util;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
@@ -58,9 +58,9 @@ public class EventSubscriber extends UntypedActor {
             handler.handleEvent(linkLeaveEvent);
         }
 
-        if(eventHandler instanceof LinkCountEventHandlerI){
+        if (eventHandler instanceof LinkCountEventHandler) {
 
-            LinkCountEventHandlerI handler = (LinkCountEventHandlerI) eventHandler;
+            LinkCountEventHandler handler = (LinkCountEventHandler) eventHandler;
             handler.handleEvent(event);
         }
     }

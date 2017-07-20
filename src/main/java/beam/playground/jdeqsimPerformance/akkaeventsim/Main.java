@@ -3,8 +3,13 @@ package beam.playground.jdeqsimPerformance.akkaeventsim;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import beam.playground.jdeqsimPerformance.akkaeventsim.events.LinkEnterEventCountHandlerImpl;
+import beam.playground.jdeqsimPerformance.akkaeventsim.events.LinkEventCountHandlerImpl;
+import beam.playground.jdeqsimPerformance.akkaeventsim.events.LinkLeaveEventHandlerImpl;
+import beam.playground.jdeqsimPerformance.akkaeventsim.events.handlers.LinkCountEventHandler;
+import beam.playground.jdeqsimPerformance.akkaeventsim.events.handlers.LinkEnterEventCountHandler;
+import beam.playground.jdeqsimPerformance.akkaeventsim.events.handlers.LinkLeaveEventCountHandler;
 import beam.playground.jdeqsimPerformance.akkaeventsim.generators.RealTimeEventGenerator;
-import beam.playground.jdeqsimPerformance.akkaeventsim.handlers.*;
 
 /**
  * Created by asif on 6/17/2017.
@@ -47,22 +52,22 @@ public class Main {
 
 
         String handlerName = "LinkEnterEventHandler";
-        LinkEnterEventHandlerI handler = new LinkEnterEventHandlerImpl();
+        LinkEnterEventCountHandler handler = new LinkEnterEventCountHandlerImpl();
         EventManagerActor.addHandler(handler, handlerName);
 
         String handlerName2 = "LinkCountEventHandler";
-        LinkCountEventHandlerI handler2 = new LinkCountEventHandlerImpl();
+        LinkCountEventHandler handler2 = new LinkEventCountHandlerImpl();
         EventManagerActor.addHandler(handler2, handlerName2);
 
         String handlerName3 = "LinkLeaveEventHandler";
-        LinkLeaveEventHandlerI handler3 = new LinkLeaveEventHandlerImpl();
+        LinkLeaveEventCountHandler handler3 = new LinkLeaveEventHandlerImpl();
         EventManagerActor.addHandler(handler3, handlerName3);
 
         eventGeneratorActor.tell("GENERATE_EVENTS", ActorRef.noSender());
 
 
         //System.out.println("EventManagerActor.isCompleted() -> " + EventManagerActor.isCompleted());
-        while(EventManagerActor.em._isCompleted == false){
+        while (EventManagerActor.isCompleted() == false) {
 
             try {
                 Thread.sleep(5000);
@@ -71,9 +76,9 @@ public class Main {
             }
         }
 
-        LinkEnterEventHandlerI _handler = (LinkEnterEventHandlerI)EventManagerActor.getEventHandler(handlerName);
-        LinkCountEventHandlerI _handler2 = (LinkCountEventHandlerI)EventManagerActor.getEventHandler(handlerName2);
-        LinkLeaveEventHandlerI _handler3 = (LinkLeaveEventHandlerI)EventManagerActor.getEventHandler(handlerName3);
+        LinkEnterEventCountHandler _handler = (LinkEnterEventCountHandler) EventManagerActor.getEventHandler(handlerName);
+        LinkCountEventHandler _handler2 = (LinkCountEventHandler) EventManagerActor.getEventHandler(handlerName2);
+        LinkLeaveEventCountHandler _handler3 = (LinkLeaveEventCountHandler) EventManagerActor.getEventHandler(handlerName3);
         System.out.println(handlerName + " -> count -> " + _handler.getCount());
         System.out.println(handlerName2 + " -> count -> " + _handler2.getCount());
         System.out.println(handlerName3 + " -> count -> " + _handler3.getCount());

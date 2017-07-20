@@ -1,8 +1,9 @@
-package beam.playground.jdeqsimPerformance.akkaeventsim.handlers;
+package beam.playground.jdeqsimPerformance.akkaeventsim.events;
 
+import beam.playground.jdeqsimPerformance.akkaeventsim.events.handlers.LinkLeaveEventCountHandler;
 import org.matsim.api.core.v01.events.LinkLeaveEvent;
 
-public class LinkLeaveEventHandlerImpl implements LinkLeaveEventHandlerI {
+public class LinkLeaveEventHandlerImpl implements LinkLeaveEventCountHandler {
 
 
 	int count = 0;

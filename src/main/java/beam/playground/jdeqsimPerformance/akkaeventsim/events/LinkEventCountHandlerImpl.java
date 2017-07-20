@@ -1,13 +1,14 @@
-package beam.playground.jdeqsimPerformance.akkaeventsim.handlers;
+package beam.playground.jdeqsimPerformance.akkaeventsim.events;
 
+import beam.playground.jdeqsimPerformance.akkaeventsim.events.handlers.LinkCountEventHandler;
 import org.matsim.api.core.v01.events.Event;
 
-public class LinkCountEventHandlerImpl implements LinkCountEventHandlerI {
+public class LinkEventCountHandlerImpl implements LinkCountEventHandler {
 
 
 	int count = 0;
 
-	public LinkCountEventHandlerImpl(){
+	public LinkEventCountHandlerImpl() {
 
 	}
 
