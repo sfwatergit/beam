@@ -8,7 +8,7 @@ import akka.pattern.Patterns;
 import akka.util.Timeout;
 import beam.playground.jdeqsimPerformance.akkaeventsim.events.handlers.LinkCountEventHandler;
 import beam.playground.jdeqsimPerformance.akkaeventsim.subscribers.EventSubscriber;
-import beam.playground.jdeqsimPerformance.akkaeventsim.util.Util;
+import beam.playground.jdeqsimPerformance.akkaeventsim.util.PerformanceParameter;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
 import org.matsim.api.core.v01.events.LinkLeaveEvent;
@@ -28,40 +28,12 @@ import java.util.Map;
  */
 public class EventManagerActor extends UntypedActor{
     private static final String ALL_EVENTS = "ALL_EVENTS";
-    /**
-     * PERFORMANCE NUMBERS - END
-     */
     private static UntypedActorContext eventManagerContext;
     private static Map<String, List<ActorRef>> eventSubscribers = new HashMap<>();
     private static Map<String, ActorRef> handlerActors = new HashMap<>();
     private static boolean _isCompleted = false;
     private static int _subscriberProcessed = 0;
-    /** PERFORMANCE NUMBERS */
-    long noOfEventsReceived = 0;
-    long firstEventReceivedTime = 0;
-    long lastEventReceiptTime = 0;
-
-    public EventManagerActor(){
-
-    }
-
-    public static void addHandler(EventHandler eventHandler){
-        // use the eventmanager reference and
-        // You will just add the it will accept eventHandler,
-        // An other method, with a second argument, with a name for the handler, it will store, store the handler with the name in a map
-        /*
-        when we call the method with getHandler with the name argument.
-         */
-
-        ActorRef actorRef = eventManagerContext.actorOf(Props.create(EventSubscriber.class, eventHandler), "EventSubscriber" + EventManagerActor.eventSubscribers.size());
-        if(eventHandler instanceof LinkEnterEventHandler) {
-
-            EventManagerActor.addSubscriber2(actorRef, LinkEnterEvent.EVENT_TYPE);
-        } else if (eventHandler instanceof LinkCountEventHandler) {
-
-            EventManagerActor.addSubscriber2(actorRef, ALL_EVENTS);
-        }
-    }
+    private PerformanceParameter performanceParameter = new PerformanceParameter();
 
     public static void addHandler(EventHandler eventHandler, String handlerName){
         // use the eventmanager reference and
@@ -117,21 +89,18 @@ public class EventManagerActor extends UntypedActor{
         for (ActorRef _actorRefs : EventManagerActor.handlerActors.values()){
 
             try {
-                //_actorRefs.tell("IS_COMPLETED", em.getSelf());
                 Timeout timeout = new Timeout(Duration.create(5, "seconds"));
                 scala.concurrent.Future<Object> future = Patterns.ask(_actorRefs, "IS_COMPLETED", timeout);
                 String isCompleted = (String) Await.result(future, timeout.duration());
                 if (isCompleted.equalsIgnoreCase("TRUE")) {
                     subscriberProcessed++;
                 }
-                //System.out.println(isCompleted + " iscompleted");
+
             }catch (Exception ex){
                 ex.printStackTrace();
             }
         }
         EventManagerActor._subscriberProcessed = subscriberProcessed;
-
-        //System.out.println("em._subscriberProcessed == em.handlerActors.keySet().size() " + (em._subscriberProcessed == em.handlerActors.keySet().size()));
         if (EventManagerActor._subscriberProcessed == EventManagerActor.handlerActors.keySet().size()) {
             EventManagerActor._isCompleted = true;
         }
@@ -172,7 +141,7 @@ public class EventManagerActor extends UntypedActor{
                 }
             }
 
-            Util.calculateRateOfEventsReceived(getSelf().path().toString(), firstEventReceivedTime, lastEventReceiptTime, noOfEventsReceived);
+            this.performanceParameter.calculateRateOfEventsReceived(getSelf().path().toString());
 
 
             checkSubscriberCompletion();
@@ -182,7 +151,7 @@ public class EventManagerActor extends UntypedActor{
     public void handleEventList(Object message){
 
         List<Event> events = (List<Event>)message;
-        updateStatistics(events.size());
+        this.performanceParameter.updateStatistics(events.size());
         for(Event event : events){
             List<ActorRef> _actorRefs = eventSubscribers.get(event.getEventType());
 
@@ -205,11 +174,5 @@ public class EventManagerActor extends UntypedActor{
         }
     }
 
-    public void updateStatistics(long receivedEvents){
-        if(noOfEventsReceived == 0){
-            firstEventReceivedTime = System.currentTimeMillis();
-        }
-        lastEventReceiptTime = System.currentTimeMillis();
-        noOfEventsReceived += receivedEvents;
-    }
+
 }

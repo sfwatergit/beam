@@ -3,7 +3,7 @@ package beam.playground.jdeqsimPerformance.akkaeventsim.generators;
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
 import beam.playground.jdeqsimPerformance.akkaeventsim.events.PhysSimTimeSyncEvent;
-import beam.playground.jdeqsimPerformance.akkaeventsim.util.Util;
+import beam.playground.jdeqsimPerformance.akkaeventsim.util.PerformanceParameter;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
@@ -20,6 +20,9 @@ import java.util.concurrent.ThreadLocalRandom;
 public class RealTimeEventGenerator extends UntypedActor{
 
 
+    public static final int LINK_ENTER_EVENT = 1;
+    public static final int LINK_LEAVE_EVENT = 2;
+    public static final int PHYSSIM_TIME_SYNC_EVENT = 3;
     double timeRangeMax = 86400;
     int eventsCount = 0;
     double timeRangeMin = 1;
@@ -27,24 +30,18 @@ public class RealTimeEventGenerator extends UntypedActor{
     int noOfLinks = 100;
     int noOfEventTypes = 2;
     double maxEventTimeReached = 0;
-
-    public static final int LINK_ENTER_EVENT = 1;
-    public static final int LINK_LEAVE_EVENT = 2;
-    public static final int PHYSSIM_TIME_SYNC_EVENT = 3;
-
-    long startTime = 0;
-    long endTime = 0;
+    PerformanceParameter performanceParameter = new PerformanceParameter();
     long noOfEvents = 10000000;
 
     Random random = new Random();
     ActorRef eventBufferActor = null;
 
-    RealTimeEventGenerator(ActorRef eventBufferActor){
+    public RealTimeEventGenerator(ActorRef eventBufferActor) {
 
         this.eventBufferActor = eventBufferActor;
     }
 
-    RealTimeEventGenerator(ActorRef eventBufferActor, long noOfEvents){
+    public RealTimeEventGenerator(ActorRef eventBufferActor, long noOfEvents) {
 
         this.eventBufferActor = eventBufferActor;
         this.noOfEvents = noOfEvents;
@@ -136,8 +133,8 @@ public class RealTimeEventGenerator extends UntypedActor{
     }
 
     private void generateEvents(){
-        long _startTime = System.currentTimeMillis();
-        startTime = _startTime;
+        long startTime = System.currentTimeMillis();
+        performanceParameter.setStartTime(startTime);
 
         for(int i = 0; i < noOfEvents; i++){
 
@@ -151,8 +148,9 @@ public class RealTimeEventGenerator extends UntypedActor{
                 eventBufferActor.tell(event, ActorRef.noSender());
             }
         }
-        endTime = System.currentTimeMillis();
-        Util.calculateRateOfEventsReceived(getSelf().path().toString(), _startTime, endTime, noOfEvents);
+        performanceParameter.setEndTime(System.currentTimeMillis());
+        this.performanceParameter.setNoOfEvents(noOfEvents);
+        this.performanceParameter.calculateRateOfEventsReceived(getSelf().path().toString());
     }
 
     @Override

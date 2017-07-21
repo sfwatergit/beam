@@ -5,10 +5,13 @@ import akka.actor.UntypedActor;
 import beam.playground.exceptions.InvalidEventTime;
 import beam.playground.jdeqsimPerformance.akkaeventsim.events.PhysSimTimeSyncEvent;
 import beam.playground.jdeqsimPerformance.akkaeventsim.util.EventTimeComparator;
-import beam.playground.jdeqsimPerformance.akkaeventsim.util.Util;
+import beam.playground.jdeqsimPerformance.akkaeventsim.util.PerformanceParameter;
 import org.matsim.api.core.v01.events.Event;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Queue;
 
 /**
  * Created by asif on 6/25/2017.
@@ -16,23 +19,18 @@ import java.util.*;
 public class EventBufferActor extends UntypedActor {
 
 
-    int startMessageCount = 0;
-    int endMessageCount = 0;
-    long noOfEventsReceived = 0;
-    long lastEventReceiptTime = 0;
-    long firstEventReceivedTime = 0;
-    boolean simulationCompletedFlag = false;
-    int physSimTimeSyncEventCount = 0;
-
-    PhysSimTimeSyncEvent physSimTimeSyncEvent = null;
-    Event eventReceived = null;
-
-    Queue<Event> eventQueue = new PriorityQueue<>(100, new EventTimeComparator());
-    List<Event> eventList = new ArrayList<>();
-    List<Event> eventLinkedList = new LinkedList<>();
-    //Queue<Event> eventQueue = new PriorityQueue<>(100, new EventTimeComparator());
-
+    private static Queue<Event> eventQueue = new PriorityQueue<>(100, new EventTimeComparator());
     ActorRef eventManagerActor = null;
+    private int startMessageCount = 0;
+    private int endMessageCount = 0;
+    private PerformanceParameter performanceParameter = new PerformanceParameter();
+    private boolean simulationCompletedFlag = false;
+    private int physSimTimeSyncEventCount = 0;
+
+    //List<Event> eventList = new ArrayList<>();
+    //List<Event> eventLinkedList = new LinkedList<>();
+    //Queue<Event> eventQueue = new PriorityQueue<>(100, new EventTimeComparator());
+    private double lastPhysSimTimeSyncEventTime = -1;
 
     public EventBufferActor(){
     }
@@ -58,16 +56,10 @@ public class EventBufferActor extends UntypedActor {
     @Override
     public void onReceive(Object message) throws Throwable {
         if (message instanceof PhysSimTimeSyncEvent) {
-
             handlePhysSimTimeSyncEvent(message);
         }else if(message instanceof Event){
-
             handleEvent(message);
-        }else if(message instanceof List){
-
-            handleEventList(message);
         }else if(message instanceof String){
-
             handleMessage(message);
         }
     }
@@ -77,33 +69,22 @@ public class EventBufferActor extends UntypedActor {
     public void handlePhysSimTimeSyncEvent(Object message){
 
         physSimTimeSyncEventCount++;
-        updateStatistics(1);
-
-        physSimTimeSyncEvent = (PhysSimTimeSyncEvent)message;
-        List<Event> events = getEvents(physSimTimeSyncEvent.getTime());
-
-        //getContext().actorSelection("../EVENT_MANAGER").tell(events, getSelf());
+        this.performanceParameter.updateStatistics(1);
+        PhysSimTimeSyncEvent physSimTimeSyncEvent = (PhysSimTimeSyncEvent) message;
+        lastPhysSimTimeSyncEventTime = physSimTimeSyncEvent.getTime();
+        List<Event> events = getEvents(lastPhysSimTimeSyncEventTime);
         eventManagerActor.tell(new ArrayList<>(events), getSelf());
     }
 
     public void handleEvent(Object message) throws InvalidEventTime{
 
-        /*
-        Event event = (Event)message;
-
-            if(physSimTimeSyncEvent != null && event.getTime() < physSimTimeSyncEvent.getTime()){
-                throw new InvalidEventTime("The timestamp for the event is smaller than the last PhysSyncTimeEvent timestamp");
-            }
-
-            eventQueue.add(event);
-         */
         if(simulationCompletedFlag == true) {
             System.out.println("Message received after simulationCompletedFlag is set " + simulationCompletedFlag);
         }
-        updateStatistics(1);
-        eventReceived = (Event)message;
+        this.performanceParameter.updateStatistics(1);
+        Event eventReceived = (Event) message;
 
-        if(physSimTimeSyncEvent != null && eventReceived.getTime() < physSimTimeSyncEvent.getTime()){
+        if (lastPhysSimTimeSyncEventTime != -1 && eventReceived.getTime() < lastPhysSimTimeSyncEventTime) {
             throw new InvalidEventTime("The timestamp for the event is smaller than the last PhysSyncTimeEvent timestamp");
         }
 
@@ -112,21 +93,7 @@ public class EventBufferActor extends UntypedActor {
         //eventLinkedList.add(eventReceived);
     }
 
-    public void handleEventList(Object message){
-
-        List<Event> eventsReceived = (List<Event>)message;
-        updateStatistics(eventsReceived.size());
-    }
-
     public void handleMessage(Object message){
-
-        /*
-        String _message = (String)message;
-            if(_message.equals("SIM_COMPLETED")){
-                System.out.println("Sim completed received in event buffer");
-                getContext().actorSelection("../EVENT_MANAGER").tell("SIM_COMPLETED", getSelf());
-            }
-         */
 
         if(((String) message).equalsIgnoreCase("START")){
             startMessageCount++;
@@ -143,18 +110,12 @@ public class EventBufferActor extends UntypedActor {
                     eventManagerActor.tell(new ArrayList<>(events), getSelf());
                 }
 
-                Util.calculateRateOfEventsReceived(getSelf().path().toString(), firstEventReceivedTime, lastEventReceiptTime, noOfEventsReceived);
+                this.performanceParameter.calculateRateOfEventsReceived(getSelf().path().toString());
 
                 eventManagerActor.tell("END", getSelf());
             }
         }
     }
 
-    public void updateStatistics(long receivedEvents){
-        if(noOfEventsReceived == 0){
-            firstEventReceivedTime = System.currentTimeMillis();
-        }
-        lastEventReceiptTime = System.currentTimeMillis();
-        noOfEventsReceived += receivedEvents;
-    }
+
 }
