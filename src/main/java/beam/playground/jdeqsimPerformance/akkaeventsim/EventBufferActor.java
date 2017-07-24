@@ -18,28 +18,22 @@ import java.util.Queue;
  */
 public class EventBufferActor extends UntypedActor {
 
-
+    //List<Event> eventList = new ArrayList<>();
+    //List<Event> eventLinkedList = new LinkedList<>();
+    //Queue<Event> eventQueue = new PriorityQueue<>(100, new EventTimeComparator());
     private static Queue<Event> eventQueue = new PriorityQueue<>(100, new EventTimeComparator());
-    ActorRef eventManagerActor = null;
+    private ActorRef eventManagerActor = null;
     private int startMessageCount = 0;
     private int endMessageCount = 0;
     private PerformanceParameter performanceParameter = new PerformanceParameter();
     private boolean simulationCompletedFlag = false;
     private int physSimTimeSyncEventCount = 0;
-
-    //List<Event> eventList = new ArrayList<>();
-    //List<Event> eventLinkedList = new LinkedList<>();
-    //Queue<Event> eventQueue = new PriorityQueue<>(100, new EventTimeComparator());
     private double lastPhysSimTimeSyncEventTime = -1;
-
-    public EventBufferActor(){
-    }
-
     public EventBufferActor(ActorRef eventManagerActor){
         this.eventManagerActor = eventManagerActor;
     }
 
-    public List<Event> getEvents(double timeThreshold){
+    private List<Event> getEvents(double timeThreshold) {
         List<Event> events = new ArrayList<>();
         while(eventQueue.size() > 0){
 
@@ -65,8 +59,7 @@ public class EventBufferActor extends UntypedActor {
     }
 
 
-
-    public void handlePhysSimTimeSyncEvent(Object message){
+    private void handlePhysSimTimeSyncEvent(Object message) {
 
         physSimTimeSyncEventCount++;
         this.performanceParameter.updateStatistics(1);
@@ -76,7 +69,7 @@ public class EventBufferActor extends UntypedActor {
         eventManagerActor.tell(new ArrayList<>(events), getSelf());
     }
 
-    public void handleEvent(Object message) throws InvalidEventTime{
+    private void handleEvent(Object message) throws InvalidEventTime {
 
         if(simulationCompletedFlag == true) {
             System.out.println("Message received after simulationCompletedFlag is set " + simulationCompletedFlag);
@@ -93,7 +86,7 @@ public class EventBufferActor extends UntypedActor {
         //eventLinkedList.add(eventReceived);
     }
 
-    public void handleMessage(Object message){
+    private void handleMessage(Object message) {
 
         if(((String) message).equalsIgnoreCase("START")){
             startMessageCount++;

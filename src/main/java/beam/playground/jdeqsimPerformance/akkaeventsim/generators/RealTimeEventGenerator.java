@@ -11,70 +11,47 @@ import org.matsim.api.core.v01.events.LinkLeaveEvent;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.vehicles.Vehicle;
 
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Created by asif on 6/17/2017.
  */
 public class RealTimeEventGenerator extends UntypedActor{
-
-
-    public static final int LINK_ENTER_EVENT = 1;
-    public static final int LINK_LEAVE_EVENT = 2;
-    public static final int PHYSSIM_TIME_SYNC_EVENT = 3;
-    double timeRangeMax = 86400;
-    int eventsCount = 0;
-    double timeRangeMin = 1;
-    int noOfVehicles = 100;
-    int noOfLinks = 100;
-    int noOfEventTypes = 2;
-    double maxEventTimeReached = 0;
-    PerformanceParameter performanceParameter = new PerformanceParameter();
-    long noOfEvents = 10000000;
-
-    Random random = new Random();
-    ActorRef eventBufferActor = null;
-
+    private static final int noOfVehicles = 100;
+    private static final int noOfLinks = 100;
+    private static final int noOfEventTypes = 2;
+    private static final double timeRangeMax = 86400;
+    private double timeRangeMin = 1;
+    private double maxEventTimeReached = 0;
+    private PerformanceParameter performanceParameter = new PerformanceParameter();
+    private long generateNoOfEvents = 10000000;
+    private ActorRef eventBufferActor = null;
     public RealTimeEventGenerator(ActorRef eventBufferActor) {
 
         this.eventBufferActor = eventBufferActor;
     }
 
-    public RealTimeEventGenerator(ActorRef eventBufferActor, long noOfEvents) {
+    private Event generatePhysSimTimeSyncEvent() {
 
-        this.eventBufferActor = eventBufferActor;
-        this.noOfEvents = noOfEvents;
-    }
-
-    public Event generatePhysSimTimeSyncEvent(){
-
-        //double eventTime = getRandomEventTime();
         double eventTime = (double)System.currentTimeMillis();
         Event event = new PhysSimTimeSyncEvent(eventTime);
         timeRangeMin = eventTime;
         return event;
     }
 
-    public Event generateEvent() {
+    private Event generateEvent() {
 
         double eventTime = (double)System.currentTimeMillis();
-        int eventType = getRandomEventType();
+        int eventTypeId = getRandomEventType();
         Id<Vehicle> vehicleId = getRandomVehicleId();
         Id<Link> linkId = getRandomLinkId();
-
-        /*if(eventsCount % 100 == 0){
-            eventType = PHYSSIM_TIME_SYNC_EVENT;
-        }*/
-
+        EventType eventType = EventType.values()[eventTypeId];
         Event event = generateEvent(eventTime, eventType, vehicleId, linkId);
         return event;
     }
 
-    public Event generateEvent(double eventTime, int eventType, Id<Vehicle> vehicleId, Id<Link> linkId){
+    private Event generateEvent(double eventTime, EventType eventType, Id<Vehicle> vehicleId, Id<Link> linkId) {
         Event event = null;
-
-        //System.out.println("Generating event of event type " + eventType);
         switch (eventType){
             case LINK_ENTER_EVENT: {
 
@@ -102,33 +79,28 @@ public class RealTimeEventGenerator extends UntypedActor{
             maxEventTimeReached = event.getTime();
         }
 
-        eventsCount++;
-
         return event;
     }
 
-    public double getRandomEventTime(){
-
-        //return timeRangeMin + (timeRangeMax - timeRangeMin) * random.nextDouble();
-        //return timeRangeMin + random.nextDouble();
+    private double getRandomEventTime() {
         return ThreadLocalRandom.current().nextDouble(timeRangeMin, timeRangeMax);
     }
 
-    public int getRandomEventType(){
+    private int getRandomEventType() {
         return getRandomInt(1, noOfEventTypes);
     }
 
-    public Id<Link> getRandomLinkId(){
+    private Id<Link> getRandomLinkId() {
         int id = getRandomInt(1, noOfLinks);
         return Id.createLinkId("link" + id);
     }
 
-    public Id<Vehicle> getRandomVehicleId(){
+    private Id<Vehicle> getRandomVehicleId() {
         int id = getRandomInt(1, noOfVehicles);
         return Id.createVehicleId("vehicle" + id);
     }
 
-    public int getRandomInt(int min, int max){
+    private int getRandomInt(int min, int max) {
         return ThreadLocalRandom.current().nextInt(min, max + 1);
     }
 
@@ -136,7 +108,7 @@ public class RealTimeEventGenerator extends UntypedActor{
         long startTime = System.currentTimeMillis();
         performanceParameter.setStartTime(startTime);
 
-        for(int i = 0; i < noOfEvents; i++){
+        for (int i = 0; i < generateNoOfEvents; i++) {
 
             long currentTime = System.currentTimeMillis();
             if(currentTime - startTime > 1000){
@@ -149,7 +121,7 @@ public class RealTimeEventGenerator extends UntypedActor{
             }
         }
         performanceParameter.setEndTime(System.currentTimeMillis());
-        this.performanceParameter.setNoOfEvents(noOfEvents);
+        this.performanceParameter.setNoOfEvents(generateNoOfEvents);
         this.performanceParameter.calculateRateOfEventsReceived(getSelf().path().toString());
     }
 
@@ -167,5 +139,11 @@ public class RealTimeEventGenerator extends UntypedActor{
                 getSelf().tell("SHOW_COUNT", getSelf());
             }
         }
+    }
+
+    private enum EventType {
+        PHYSSIM_TIME_SYNC_EVENT,
+        LINK_LEAVE_EVENT,
+        LINK_ENTER_EVENT
     }
 }

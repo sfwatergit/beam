@@ -43,13 +43,13 @@ public class EventManagerActor extends UntypedActor{
 
         if(eventHandler instanceof LinkEnterEventHandler) {
 
-            EventManagerActor.addSubscriber2(actorRef, LinkEnterEvent.EVENT_TYPE);
+            EventManagerActor.addSubscriber(actorRef, LinkEnterEvent.EVENT_TYPE);
         }else if(eventHandler instanceof LinkLeaveEventHandler) {
 
-            EventManagerActor.addSubscriber2(actorRef, LinkLeaveEvent.EVENT_TYPE);
+            EventManagerActor.addSubscriber(actorRef, LinkLeaveEvent.EVENT_TYPE);
         } else if (eventHandler instanceof LinkCountEventHandler) {
 
-            EventManagerActor.addSubscriber2(actorRef, ALL_EVENTS);
+            EventManagerActor.addSubscriber(actorRef, ALL_EVENTS);
         }
     }
 
@@ -74,7 +74,7 @@ public class EventManagerActor extends UntypedActor{
         return handler;
     }
 
-    public static void addSubscriber2(ActorRef actorRef, String eventType) {
+    private static void addSubscriber(ActorRef actorRef, String eventType) {
 
         List<ActorRef> subscribers = EventManagerActor.eventSubscribers.get(eventType);
         if(subscribers != null){
@@ -83,7 +83,7 @@ public class EventManagerActor extends UntypedActor{
         EventManagerActor.eventSubscribers.put(eventType, Arrays.asList(actorRef));
     }
 
-    public static void checkSubscriberCompletion(){
+    private static void checkSubscriberCompletion() {
         int subscriberProcessed = 0;
         EventManagerActor._subscriberProcessed = 0;
         for (ActorRef _actorRefs : EventManagerActor.handlerActors.values()){
@@ -127,7 +127,7 @@ public class EventManagerActor extends UntypedActor{
         }
     }
 
-    public void handleMessage(Object message) {
+    private void handleMessage(Object message) {
 
         String _message = (String) message;
         if (_message.equals("SIM_COMPLETED")) {
@@ -148,7 +148,7 @@ public class EventManagerActor extends UntypedActor{
         }
     }
 
-    public void handleEventList(Object message){
+    private void handleEventList(Object message) {
 
         List<Event> events = (List<Event>)message;
         this.performanceParameter.updateStatistics(events.size());
