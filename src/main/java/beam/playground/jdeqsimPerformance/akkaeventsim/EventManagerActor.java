@@ -7,6 +7,10 @@ import akka.actor.UntypedActorContext;
 import akka.pattern.Patterns;
 import akka.util.Timeout;
 import beam.playground.jdeqsimPerformance.akkaeventsim.events.handlers.LinkCountEventHandler;
+import beam.playground.jdeqsimPerformance.akkaeventsim.messages.BufferedEventMessage;
+import beam.playground.jdeqsimPerformance.akkaeventsim.messages.EndSimulationMessage;
+import beam.playground.jdeqsimPerformance.akkaeventsim.messages.GetHandlerMessage;
+import beam.playground.jdeqsimPerformance.akkaeventsim.messages.SimulationCompleteMessage;
 import beam.playground.jdeqsimPerformance.akkaeventsim.subscribers.EventSubscriber;
 import beam.playground.jdeqsimPerformance.akkaeventsim.util.PerformanceParameter;
 import org.matsim.api.core.v01.events.Event;
@@ -26,7 +30,7 @@ import java.util.Map;
 /**
  * Created by asif on 6/17/2017.
  */
-public class EventManagerActor extends UntypedActor{
+public class EventManagerActor extends UntypedActor {
     private static final String ALL_EVENTS = "ALL_EVENTS";
     private static UntypedActorContext eventManagerContext;
     private static Map<String, List<ActorRef>> eventSubscribers = new HashMap<>();
@@ -35,20 +39,16 @@ public class EventManagerActor extends UntypedActor{
     private static int _subscriberProcessed = 0;
     private PerformanceParameter performanceParameter = new PerformanceParameter();
 
-    public static void addHandler(EventHandler eventHandler, String handlerName){
+    public static void addHandler(EventHandler eventHandler, String handlerName) {
         // use the eventmanager reference and
         // You will just add the it will accept eventHandler,
         ActorRef actorRef = eventManagerContext.actorOf(Props.create(EventSubscriber.class, eventHandler), handlerName);
         EventManagerActor.handlerActors.put(handlerName, actorRef);
-
-        if(eventHandler instanceof LinkEnterEventHandler) {
-
+        if (eventHandler instanceof LinkEnterEventHandler) {
             EventManagerActor.addSubscriber(actorRef, LinkEnterEvent.EVENT_TYPE);
-        }else if(eventHandler instanceof LinkLeaveEventHandler) {
-
+        } else if (eventHandler instanceof LinkLeaveEventHandler) {
             EventManagerActor.addSubscriber(actorRef, LinkLeaveEvent.EVENT_TYPE);
         } else if (eventHandler instanceof LinkCountEventHandler) {
-
             EventManagerActor.addSubscriber(actorRef, ALL_EVENTS);
         }
     }
@@ -66,18 +66,21 @@ public class EventManagerActor extends UntypedActor{
         try {
             ActorRef subscriberActorRef = EventManagerActor.handlerActors.get(handlerName);
             Timeout timeout = new Timeout(Duration.create(5, "seconds"));
-            scala.concurrent.Future<Object> future = Patterns.ask(subscriberActorRef, "GET_HANDLER", timeout);
+            scala.concurrent.Future<Object> future = Patterns.ask(subscriberActorRef, new GetHandlerMessage(), timeout);
             handler = (EventHandler) Await.result(future, timeout.duration());
-        }catch(Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
         return handler;
     }
 
-    private static void addSubscriber(ActorRef actorRef, String eventType) {
+    public static boolean isCompleted() {
+        return EventManagerActor._isCompleted;
+    }
 
+    private static void addSubscriber(ActorRef actorRef, String eventType) {
         List<ActorRef> subscribers = EventManagerActor.eventSubscribers.get(eventType);
-        if(subscribers != null){
+        if (subscribers != null) {
             subscribers.addAll(Arrays.asList(actorRef));
         }
         EventManagerActor.eventSubscribers.put(eventType, Arrays.asList(actorRef));
@@ -86,17 +89,15 @@ public class EventManagerActor extends UntypedActor{
     private static void checkSubscriberCompletion() {
         int subscriberProcessed = 0;
         EventManagerActor._subscriberProcessed = 0;
-        for (ActorRef _actorRefs : EventManagerActor.handlerActors.values()){
-
+        for (ActorRef _actorRefs : EventManagerActor.handlerActors.values()) {
             try {
                 Timeout timeout = new Timeout(Duration.create(5, "seconds"));
-                scala.concurrent.Future<Object> future = Patterns.ask(_actorRefs, "IS_COMPLETED", timeout);
+                scala.concurrent.Future<Object> future = Patterns.ask(_actorRefs, new SimulationCompleteMessage(), timeout);
                 String isCompleted = (String) Await.result(future, timeout.duration());
                 if (isCompleted.equalsIgnoreCase("TRUE")) {
                     subscriberProcessed++;
                 }
-
-            }catch (Exception ex){
+            } catch (Exception ex) {
                 ex.printStackTrace();
             }
         }
@@ -106,11 +107,6 @@ public class EventManagerActor extends UntypedActor{
         }
     }
 
-    public static boolean isCompleted() {
-
-        return EventManagerActor._isCompleted;
-    }
-
     @Override
     public void preStart() throws Exception {
         eventManagerContext = getContext();
@@ -118,61 +114,44 @@ public class EventManagerActor extends UntypedActor{
 
     @Override
     public void onReceive(Object message) throws Throwable {
-        if (message instanceof List) {
-
+        if (message instanceof BufferedEventMessage) {
             handleEventList(message);
-        } else if (message instanceof String) {
-
-            handleMessage(message);
         }
+        handleMessage(message);
     }
 
     private void handleMessage(Object message) {
-
-        String _message = (String) message;
-        if (_message.equals("SIM_COMPLETED")) {
-            System.out.println("Sim completed received");
-        } else if (_message.equals("END")) {
-
+        if (message instanceof EndSimulationMessage) {
             for (String key : eventSubscribers.keySet()) {
                 for (ActorRef actorRef : eventSubscribers.get(key)) {
-
-                    actorRef.tell("END", getSelf());
+                    actorRef.tell(new EndSimulationMessage(), getSelf());
                 }
             }
-
             this.performanceParameter.calculateRateOfEventsReceived(getSelf().path().toString());
-
-
             checkSubscriberCompletion();
+        } else {
+            unhandled(message);
         }
     }
 
     private void handleEventList(Object message) {
-
-        List<Event> events = (List<Event>)message;
+        List<Event> events = ((BufferedEventMessage) message).getEventList();
         this.performanceParameter.updateStatistics(events.size());
-        for(Event event : events){
+        for (Event event : events) {
             List<ActorRef> _actorRefs = eventSubscribers.get(event.getEventType());
+            List<ActorRef> _allEventActorRefs = eventSubscribers.get(ALL_EVENTS);
 
-            if(_actorRefs != null) {
+            if (_actorRefs != null) {
                 for (ActorRef subscriberActor : _actorRefs) {
                     subscriberActor.tell(event, getSelf());
                 }
             }
-        }
-
-
-        List<ActorRef> _actorRefs = eventSubscribers.get(ALL_EVENTS);
-        for(Event event : events){
-
-            if(_actorRefs != null) {
-                for (ActorRef subscriberActor : _actorRefs) {
+            if (_allEventActorRefs != null) {
+                for (ActorRef subscriberActor : _allEventActorRefs) {
                     subscriberActor.tell(event, getSelf());
                 }
             }
         }
     }
-
 
 }

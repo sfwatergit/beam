@@ -10,13 +10,14 @@ import beam.playground.jdeqsimPerformance.akkaeventsim.events.handlers.LinkCount
 import beam.playground.jdeqsimPerformance.akkaeventsim.events.handlers.LinkEnterEventCountHandler;
 import beam.playground.jdeqsimPerformance.akkaeventsim.events.handlers.LinkLeaveEventCountHandler;
 import beam.playground.jdeqsimPerformance.akkaeventsim.generators.RealTimeEventGenerator;
+import beam.playground.jdeqsimPerformance.akkaeventsim.messages.GenerateEventMessage;
 
 /**
  * Created by asif on 6/17/2017.
  */
 public class Main {
 
-    public static void main(String args[]){
+    public static void main(String args[]) {
 
         /**
          * Create an RandomEventGenerator instance and generate events and put them in a Queue
@@ -63,8 +64,7 @@ public class Main {
         LinkLeaveEventCountHandler handler3 = new LinkLeaveEventHandlerImpl();
         EventManagerActor.addHandler(handler3, handlerName3);
 
-        eventGeneratorActor.tell("GENERATE_EVENTS", ActorRef.noSender());
-
+        eventGeneratorActor.tell(new GenerateEventMessage(10000000), ActorRef.noSender());
 
         //System.out.println("EventManagerActor.isCompleted() -> " + EventManagerActor.isCompleted());
         while (EventManagerActor.isCompleted() == false) {
