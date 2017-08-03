@@ -2,9 +2,13 @@ package beam.playground.jdeqsimPerformance.akkaeventsim.generators;
 
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
+import akka.event.Logging;
+import akka.event.LoggingAdapter;
+import beam.playground.jdeqsimPerformance.akkaeventsim.EventBufferActor;
 import beam.playground.jdeqsimPerformance.akkaeventsim.events.PhysSimTimeSyncEvent;
 import beam.playground.jdeqsimPerformance.akkaeventsim.messages.EndSimulationMessage;
 import beam.playground.jdeqsimPerformance.akkaeventsim.messages.GenerateEventMessage;
+import beam.playground.jdeqsimPerformance.akkaeventsim.messages.GeneratedEventMessage;
 import beam.playground.jdeqsimPerformance.akkaeventsim.messages.StartSimulationMessage;
 import beam.playground.jdeqsimPerformance.akkaeventsim.util.PerformanceParameter;
 import org.matsim.api.core.v01.Id;
@@ -25,12 +29,21 @@ public class RealTimeEventGenerator extends UntypedActor {
     private static final int NO_OF_LINKS = 100;
     private static final int NO_OF_EVENT_TYPES = 2;
     private static final double TIME_RANGE_MAX = 86400;
+    private static int instanceCounter = 0;
+    LoggingAdapter log = Logging.getLogger(getContext().system(), this);
     private double timeRangeMin = 1;
     private double maxEventTimeReached = 0;
     private PerformanceParameter performanceParameter = new PerformanceParameter();
     private ActorRef eventBufferActor = null;
     public RealTimeEventGenerator(ActorRef eventBufferActor) {
         this.eventBufferActor = eventBufferActor;
+    }
+
+    @Override
+    public void preStart() {
+        instanceCounter++;
+        log.info("Starting ServerActor instance #" + instanceCounter
+                + ", hashcode #" + this.hashCode());
     }
 
     @Override
@@ -45,48 +58,60 @@ public class RealTimeEventGenerator extends UntypedActor {
         }
     }
 
-    private Event generatePhysSimTimeSyncEvent() {
+    @Override
+    public void postStop() {
+        log.info("Stopping ServerActor instance #" + instanceCounter
+                + ", hashcode #" + this.hashCode());
+        instanceCounter--;
+    }
+
+    private GeneratedEventMessage generatePhysSimTimeSyncEvent() {
         double eventTime = (double) System.currentTimeMillis();
         Event event = new PhysSimTimeSyncEvent(eventTime);
         timeRangeMin = eventTime;
-        return event;
+        return new GeneratedEventMessage(event.toString(), EventBufferActor.PHY_SIM_TIME_SYNC_EVENT);
     }
 
-    private Event generateEvent() {
+    private GeneratedEventMessage generateEvent() {
         double eventTime = (double) System.currentTimeMillis();
         int eventTypeId = getRandomEventType();
         Id<Vehicle> vehicleId = getRandomVehicleId();
         Id<Link> linkId = getRandomLinkId();
         EventType eventType = EventType.values()[eventTypeId];
-        Event event = generateEvent(eventTime, eventType, vehicleId, linkId);
-        return event;
+        return generateEvent(eventTime, eventType, vehicleId, linkId);
     }
 
-    private Event generateEvent(double eventTime, EventType eventType, Id<Vehicle> vehicleId, Id<Link> linkId) {
+    private GeneratedEventMessage generateEvent(double eventTime, EventType eventType, Id<Vehicle> vehicleId, Id<Link> linkId) {
         Event event = null;
+        String eventTypeName;
         switch (eventType) {
             case LINK_ENTER_EVENT: {
                 event = new LinkEnterEvent(eventTime, vehicleId, linkId);
+                eventTypeName = EventBufferActor.LINK_ENTER_EVENT;
                 break;
             }
             case LINK_LEAVE_EVENT: {
                 event = new LinkLeaveEvent(eventTime, vehicleId, linkId);
+                eventTypeName = EventBufferActor.LINK_LEAVE_EVENT;
                 break;
             }
             case PHYSSIM_TIME_SYNC_EVENT: {
                 event = new PhysSimTimeSyncEvent(eventTime);
                 timeRangeMin = eventTime;
+                eventTypeName = EventBufferActor.PHY_SIM_TIME_SYNC_EVENT;
                 break;
             }
             default: {
                 event = new LinkEnterEvent(eventTime, vehicleId, linkId);
+                eventTypeName = EventBufferActor.LINK_ENTER_EVENT;
                 break;
             }
         }
         if (event.getTime() > maxEventTimeReached) {
             maxEventTimeReached = event.getTime();
         }
-        return event;
+
+        return new GeneratedEventMessage(event.toString(), eventTypeName);
     }
 
     private double getRandomEventTime() {
@@ -117,11 +142,11 @@ public class RealTimeEventGenerator extends UntypedActor {
         for (int i = 0; i < noOfEvents; i++) {
             long currentTime = System.currentTimeMillis();
             if (currentTime - startTime > PHY_SYN_EVENT_TIME) {
-                Event event = generatePhysSimTimeSyncEvent();
+                GeneratedEventMessage event = generatePhysSimTimeSyncEvent();
                 eventBufferActor.tell(event, ActorRef.noSender());
                 startTime = currentTime;
             } else {
-                Event event = generateEvent();
+                GeneratedEventMessage event = generateEvent();
                 eventBufferActor.tell(event, ActorRef.noSender());
             }
         }

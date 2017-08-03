@@ -64,7 +64,7 @@ public class Main {
         LinkLeaveEventCountHandler handler3 = new LinkLeaveEventHandlerImpl();
         EventManagerActor.addHandler(handler3, handlerName3);
 
-        eventGeneratorActor.tell(new GenerateEventMessage(10000000), ActorRef.noSender());
+        eventGeneratorActor.tell(new GenerateEventMessage(100000), ActorRef.noSender());
 
         //System.out.println("EventManagerActor.isCompleted() -> " + EventManagerActor.isCompleted());
         while (EventManagerActor.isCompleted() == false) {
