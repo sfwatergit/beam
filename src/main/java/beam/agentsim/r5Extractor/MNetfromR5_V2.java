@@ -8,7 +8,6 @@ import com.vividsolutions.jts.geom.Coordinate;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.NetworkWriter;
 import org.matsim.api.core.v01.network.Node;
@@ -17,25 +16,25 @@ import org.matsim.core.network.algorithms.NetworkCleaner;
 import org.matsim.core.utils.geometry.transformations.GeotoolsTransformation;
 
 import java.io.File;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 /**
  *
  *
  * Created by Andrew A. Campbell on 6/7/17.
- *
- * V2 uses MATSim's OsmNetworkReader to generate the link. The con is that we have to use reflection to expose the
- * method. The pro is that this way we will stay consistent with MATSim in the way we convert OSM ways into links
- * with regards to setting speeds and capacities.
  */
-public class MNetfromR5 {
-	private static final Logger log = Logger.getLogger(MNetfromR5.class);
+public class MNetfromR5_V2 {
+	private static final Logger log = Logger.getLogger(MNetfromR5_V2.class);
 
 	private TransportNetwork r5Network = null;  // R5 mNetowrk
 	private Network mNetowrk = null;  // MATSim mNetowrk
 	//TODO - the CRS should be settable not hard coded
 	private String fromCRS = "EPSG:4326";  // WGS84
 	private String toCRS = "EPSG:26910";  // UTM10N
+	GeotoolsTransformation tranform = new GeotoolsTransformation(this.fromCRS, this.toCRS);
 	private String osmFile;
 
 	private HashMap<Coord, Id<Node>> nodeMap = new HashMap<>();  // Maps x,y Coord to node ID
@@ -48,7 +47,7 @@ public class MNetfromR5 {
 	 * @param modeFlags EnumSet defining the modes to be included in the network. See
 	 *                     com.conveyal.r5.streets.EdgeStore.EdgeFlag for EdgeFlag definitions.
 	 */
-	public MNetfromR5(String r5NetPath, String osmPath, EnumSet<EdgeStore.EdgeFlag> modeFlags){
+	public MNetfromR5_V2(String r5NetPath, String osmPath, EnumSet<EdgeStore.EdgeFlag> modeFlags){
 		this.osmFile = osmPath;
 		File netFile = new File(r5NetPath);
 		log.info("Found R5 Transport Network file, loading....");
@@ -66,7 +65,7 @@ public class MNetfromR5 {
 	 * Defaults to only using automobiles for the network.
 	 * @param r5NetPath
 	 */
-	public MNetfromR5(String r5NetPath, String osmPath) {
+	public MNetfromR5_V2(String r5NetPath, String osmPath) {
 		this(r5NetPath, osmPath, EnumSet.of(EdgeStore.EdgeFlag.ALLOWS_CAR));
 	}
 
@@ -75,6 +74,7 @@ public class MNetfromR5 {
 		OSM osm = new OSM(this.osmFile);
 		Map<Long, Way> ways = osm.ways;
 		EdgeStore.Edge cursor = r5Network.streetLayer.edgeStore.getCursor();  // Iterator of edges in R5 network
+		OsmToMATSim OTM = new OsmToMATSim(this.mNetowrk, this.tranform, true);
 		while (cursor.advance()) {
 			// Check if this edge permits any of the desired modes.
 			EnumSet<EdgeStore.EdgeFlag> flags = cursor.getFlags();
@@ -93,7 +93,7 @@ public class MNetfromR5 {
 			////
 			long osmID =  cursor.getOSMID();  // id of edge in the OSM db
 			Way way = ways.get(osmID);
-			int lanes = Integer.valueOf(way.getTag("lanes"));
+//			int lanes = Integer.valueOf(way.getTag("lanes"));
 			Integer idx = cursor.getEdgeIndex();
 			double length = cursor.getLengthM();
 			double speed = cursor.getSpeedMs();
@@ -104,24 +104,33 @@ public class MNetfromR5 {
 			Coordinate tempToCoord = tempCoords[tempCoords.length - 1];
 			Coord toCoord = transformCRS(new Coord(tempToCoord.x, tempToCoord.y));
 			// Add R5 start and end nodes to the MATSim network
-			// Grab existing nodes from mNetwork if they already exist, else make new ones
+			// Grab existing nodes from mNetwork if they already exist, else make new ones and add to mNetwork
 			Node fromNode = this.getOrMakeNode(fromCoord);
 			Node toNode = this.getOrMakeNode(toCoord);
-			// Make the link and add it to mNetwork
-			Id<Link> linkId = Id.createLinkId(idx);
-			//why should we ever see the same linkID twice? This would mean we are seeing the same cursor.getEdgeIndex() value, i.e. repeating R5 edges
-			if (!this.mNetowrk.getLinks().containsKey(linkId)){  // New link
-				Link r5Link = NetworkUtils.createLink(Id.createLinkId(idx.toString()), fromNode, toNode, mNetowrk, length, speed, 1.0, lanes);
-				r5Link.setAllowedModes(flagStrings);
-				this.mNetowrk.addLink(r5Link);
-			} else {
-				// Link already exists. Add any new allowable modes.
-				Link r5Link = this.mNetowrk.getLinks().get(linkId);
-				Set<String> allowedModes =  new HashSet<>((Collection) r5Link.getAllowedModes());
-				allowedModes.addAll(flagStrings);
-				r5Link.setAllowedModes(allowedModes);
-				log.info("Link already exists. ID: " + linkId);
+			// TODO - implications of having null way values still not clear to me. Can we really just skip them?
+			// Make and add the link (only if way exists)
+
+			if (way != null){
+				OTM.createLink(way, osmID, fromNode, toNode, length, flagStrings);
 			}
+
+
+
+//			// Make the link and add it to mNetwork. Uses the same Id<Link> as the cursor index
+//			Id<Link> linkId = Id.createLinkId(idx);
+//			//why should we ever see the same linkID twice? This would mean we are seeing the same cursor.getEdgeIndex() value, i.e. repeating R5 edges
+//			if (!this.mNetowrk.getLinks().containsKey(linkId)){  // New link
+//				Link r5Link = NetworkUtils.createLink(Id.createLinkId(idx.toString()), fromNode, toNode, mNetowrk, length, speed, 1.0, lanes);
+//				r5Link.setAllowedModes(flagStrings);
+//				this.mNetowrk.addLink(r5Link);
+//			} else {
+//				// Link already exists. Add any new allowable modes.
+//				Link r5Link = this.mNetowrk.getLinks().get(linkId);
+//				Set<String> allowedModes =  new HashSet<>((Collection) r5Link.getAllowedModes());
+//				allowedModes.addAll(flagStrings);
+//				r5Link.setAllowedModes(allowedModes);
+//				log.info("Link already exists. ID: " + linkId);
+//			}
 		}
 	}
 
@@ -160,6 +169,7 @@ public class MNetfromR5 {
 
 	/*
 	Tranforms from WGS84 to UTM 26910
+	/TODO - this helper is not needed now that we have this.transform. But setTransform() needs to be updated
 	 */
 	private Coord transformCRS(Coord coord){
 		GeotoolsTransformation tranform = new GeotoolsTransformation(this.fromCRS, this.toCRS);
@@ -227,6 +237,13 @@ public class MNetfromR5 {
 		}
 	}
 
+	/**
+	 * This class is based off of MATSim's OsmNetworkReader. Particularly, it is used to generate all the link
+	 * attributes in the MATSim network based on the OSM way's tags the same way OsmNetworkReader does.
+	 */
+	public class OsmWayToMATSim {
+
+	}
 
 	/**
 	 * Input args:
@@ -242,7 +259,7 @@ public class MNetfromR5 {
 		String osmPath = args[1];
 		String mNetPath = args[2];
 		// If mode flags passed, use the constructor with the modeFlags parameter
-		MNetfromR5 mn = null;
+		MNetfromR5_V2 mn = null;
 		if (args.length > 3){
 			String[] flagStrings = args[3].trim().split(",");
 			EnumSet<EdgeStore.EdgeFlag> modeFlags = EnumSet.noneOf(EdgeStore.EdgeFlag.class);
@@ -250,14 +267,14 @@ public class MNetfromR5 {
 				modeFlags.add(EdgeStore.EdgeFlag.valueOf(f));
 			}
 			System.out.println("USING MODE FLAGS HURRAY!!!!!!!!!");
-			mn = new MNetfromR5(inFolder, osmPath, modeFlags);
+			mn = new MNetfromR5_V2(inFolder, osmPath, modeFlags);
 		}
 		// otherwise use the default constructor
 		else {
-			mn = new MNetfromR5(inFolder, osmPath);
+			mn = new MNetfromR5_V2(inFolder, osmPath);
 		}
 
-		mn.buildMNet();
+//		mn.buildMNet();
 		log.info("Finished building network.");
 		NetworkCleaner nC = new NetworkCleaner();
 		log.info("Running NetowrkCleaner");
