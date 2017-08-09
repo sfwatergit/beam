@@ -3,7 +3,8 @@ package beam.agentsim.agents.vehicles
 import beam.agentsim.agents.vehicles.Trajectory._
 import beam.sim.config.ConfigModule._
 import beam.agentsim.events.SpaceTime
-import beam.router.RoutingModel.BeamGraphPath
+import beam.router.RoutingModel.{BeamStreetPath, BeamTransitSegment}
+import com.conveyal.r5.api.util.TransitSegment
 import org.apache.commons.math3.analysis.interpolation.LinearInterpolator
 import org.matsim.core.utils.geometry.geotools.MGC
 import org.matsim.core.utils.geometry.transformations.TransformationFactory
@@ -15,33 +16,39 @@ object Trajectory {
 
   def defaultCoordinateSystem = beamConfig.beam.routing.gtfs.crs
 
+  //TODO this is a stub but needs to include a transformation from TransitSegment to StreetPath (with empty linkId Vector)
+  def apply(transitSegment: BeamTransitSegment): Trajectory = {
+    new Trajectory(BeamStreetPath.empty)
+  }
+
 }
 /**
   * Describe trajectory as vector of coordinates with time for each coordinate
-  * @param initialRoute
+  * @param streetPath
   */
-class Trajectory(initialRoute: BeamGraphPath) {
+class Trajectory(streetPath: BeamStreetPath) {
 
-  require(initialRoute.latLons.nonEmpty)
-  require(initialRoute.entryTimes.nonEmpty)
-  private var _route = initialRoute
+  def this()= {
+    this(BeamStreetPath.empty.copy())
+  }
+  private var _route = streetPath
 
   def coordinateSystem = defaultCoordinateSystem
 
   protected[agentsim] def append(coords: (String,SpaceTime)) = {
     //val transformed = transformer.transform(coords._2.loc)
-    val transformed = coords._2.loc
+    val transformed = coords._2
     // x -> longitude, y -> latitude
-    this._route = this._route.copy(linkIds = this._route.linkIds :+ coords._1, latLons = this._route.latLons:+ transformed,
-      entryTimes = this._route.entryTimes :+ coords._2.time)
+    this._route = this._route.copy(linkIds = this._route.linkIds :+ coords._1, trajectory = Option(this._route.trajectory.getOrElse(Vector()) :+ transformed))
   }
 
   def location(time: Double): SpaceTime = {
+    require(_route.size > 0)
     require(_route.latLons.length == _route.entryTimes.length)
     val timeL = Math.floor(time).toLong
     _route.entryTimes.search(timeL) match {
       case found: Found =>
-        SpaceTime((_route.latLons(found.foundIndex), timeL))
+        SpaceTime(_route.latLons(found.foundIndex), timeL)
       case InsertionPoint(closestIndex) =>
         //closestPosition = [0, array.len ]
         //TODO: consider some cache for interpolated coords because it's heavy process
@@ -63,9 +70,11 @@ class Trajectory(initialRoute: BeamGraphPath) {
         .interpolate(timeFunction, yFunc)
       SpaceTime(xInterpolator.value(time), yInterpolator.value(time), timeL)
     } else if (closestPosition == _route.size) {
-      SpaceTime((_route.latLons.last, timeL))
+      SpaceTime(_route.latLons.last, timeL)
+    } else if (_route.latLons.nonEmpty){
+      SpaceTime(_route.latLons.head, timeL)
     } else {
-      SpaceTime((_route.latLons.head, timeL))
+      SpaceTime(_route.latLons.head, timeL)
     }
   }
 
