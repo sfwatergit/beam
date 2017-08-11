@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
  * Created by salma_000 on 8/3/2017.
  */
 public class EventConsumerLoadBalancer extends UntypedActor {
-    public static int No_Of_Worker = 25;
+    public static int No_Of_Worker = 10;
     private ActorRef worker;
 
     public EventConsumerLoadBalancer(ActorRef eventCollectorRef) {

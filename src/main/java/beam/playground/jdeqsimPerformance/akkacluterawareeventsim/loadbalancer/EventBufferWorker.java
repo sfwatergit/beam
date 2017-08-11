@@ -55,7 +55,9 @@ public class EventBufferWorker extends UntypedActor {
     public void onReceive(Object message) throws Throwable {
         if (message instanceof GeneratedEventMessage) {
             GeneratedEventMessage msg = (GeneratedEventMessage) message;
-            Event event = unMarshalEvent(msg.getStrEvent());
+            //String strEvent = msg.getStrEvent();
+            String strEvent = new String(msg.getByteEvent(), "UTF-8");
+            Event event = unMarshalEvent(strEvent);
             if (event instanceof PhysSimTimeSyncEvent)
                 handlePhysSimTimeSyncEvent(event);
             else
