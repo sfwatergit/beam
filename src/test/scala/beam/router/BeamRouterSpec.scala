@@ -13,6 +13,8 @@ import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers, WordSpecLike}
 
+import scala.concurrent.duration.{Duration, FiniteDuration}
+
 /**
   * Created by zeeshan bilal on 7/3/2017.
   */
@@ -40,6 +42,8 @@ class BeamRouterSpec extends TestKit(ActorSystem("router-test")) with WordSpecLi
     """.stripMargin
 
   private implicit val timeout = Timeout(1, TimeUnit.MINUTES)
+
+  private val expectTime = FiniteDuration.apply(1, TimeUnit.MINUTES)
 
   val services: BeamServices = mock[BeamServices]
 
@@ -73,13 +77,13 @@ class BeamRouterSpec extends TestKit(ActorSystem("router-test")) with WordSpecLi
     "Respond with RouterInitialized" in {
 
       router ! InitializeRouter
-      expectMsg(RouterInitialized)
+      expectMsg(expectTime, RouterInitialized)
     }
 
     "Respond with RouterInitialized, even on subsequent requests" in {
 
       router ! InitializeRouter
-      expectMsg(RouterInitialized)
+      expectMsg(expectTime, RouterInitialized)
       EventFilter.debug(message = "Router already initialized.", occurrences = 1)
     }
   }
