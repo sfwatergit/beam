@@ -24,24 +24,25 @@ class BeamRouterSpec extends TestKit(ActorSystem("router-test")) with WordSpecLi
       |routerClass = "beam.router.r5.R5RoutingWorker"
       |baseDate = "2016-10-17T00:00:00-07:00"
       |r5 {
-      |  directory = "/model-inputs/r5"
+      |  directory = "D:\\beam-developers\\model-inputs\\r5"
       |  departureWindow = 15
       |}
       |otp {
-      |  directory = "/model-inputs/otp"
+      |  directory = "D:\\beam-developers\\model-inputs\\otp"
       |  routerIds = ["sf"]
       |}
       |gtfs {
-      |  operatorsFile = "src/main/resources/GTFSOperators.csv"
+      |  operatorsFile = "D:\\Proyectos\\Upwork\\HR\\BEAM\\Repository\\beam\\out\\production\\resources\\GTFSOperators.csv"
       |  outputDir = "/gtfs"
       |  apiKey = "ABC123"
       |  crs = "epsg26910"
       |}
     """.stripMargin
 
-  private implicit val timeout = Timeout(60, TimeUnit.SECONDS)
+  private implicit val timeout = Timeout(1, TimeUnit.MINUTES)
 
   val services: BeamServices = mock[BeamServices]
+
   var router: ActorRef = _
   override def beforeAll = {
     when(services.beamConfig).thenReturn(BeamConfig(null, BeamConfig.Beam(null, "beam", null, null, BeamConfig.Beam.Routing(ConfigFactory.parseString(TEST_CONFIG)), null, null), null, null))
